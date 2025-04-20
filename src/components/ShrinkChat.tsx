@@ -1,3 +1,4 @@
+// shrink-chat/src/components/ShrinkChat.tsx
 "use client";
 
 import { useState, ChangeEvent, KeyboardEvent } from "react";
@@ -7,10 +8,7 @@ import { Button } from "../components/ui/button";
 
 export default function ShrinkChat() {
   const [messages, setMessages] = useState([
-    {
-      sender: "engine",
-      text: "Welcome. Whenever you're ready, I'm here."
-    }
+    { sender: "engine", text: "Welcome. Whenever you're ready, I'm here." }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,27 +25,36 @@ export default function ShrinkChat() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!input.trim()) return;
-    const userMessage = { sender: "user", text: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
+ const handleSubmit = async () => {
+  if (!input.trim()) return;
+  const userMessage = { sender: "user", text: input.trim() };
+  setMessages((prev) => [...prev, userMessage]);
+  setInput("");
+  setIsLoading(true);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shrink`, {
+  try {
+    const res = await fetch("/api/shrink", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: userMessage.text })
     });
 
-    const data = await res.json();
-    const engineMessage = {
-      sender: "engine",
-      text: data.response_text
-    };
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("API error:", err);
+      return;
+    }
+
+    const { text } = await res.json();
+    const engineMessage = { sender: "engine", text };
     setMessages((prev) => [...prev, engineMessage]);
+  } catch (networkError) {
+    console.error("Network error:", networkError);
+  } finally {
     setIsLoading(false);
-  };
+  }
+};
+
 
   if (!isUnlocked) {
     return (
@@ -69,9 +76,9 @@ export default function ShrinkChat() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
+    <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col">
       <Card>
-        <CardContent className="space-y-4 p-6">
+        <CardContent className="space-y-4 p-6 flex flex-col">
           {messages.map((msg, idx) => (
             <div
               key={idx}
