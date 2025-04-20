@@ -34,7 +34,7 @@ export default function ShrinkChat() {
     setInput("");
     setIsLoading(true);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/shrink`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shrink`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: userMessage.text })
