@@ -1,30 +1,27 @@
-// shrink-chat/src/app/api/shrink/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
-  const { prompt } = await request.json();
+  // Parse body as an object with a single string property
+  const { prompt } = (await request.json()) as { prompt: string };
 
-  if (typeof prompt !== "string") {
+  // Call your Vercel function
+  const apiRes = await fetch(
+    `${process.env.NEXT_PUBLIC_SHRINK_API_URL}/api/shrink`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    }
+  );
+
+  if (!apiRes.ok) {
+    const errorText = await apiRes.text();
     return NextResponse.json(
-      { error: "Invalid prompt format" },
-      { status: 400 }
+      { error: 'Backend error', detail: errorText },
+      { status: apiRes.status }
     );
   }
 
-  try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-    });
-    const text = completion.choices?.[0]?.message?.content ?? "";
-    return NextResponse.json({ text });
-  } catch (err: any) {
-    console.error("Error in /api/shrink:", err);
-    return NextResponse.json(
-      { error: err.message || "Internal Server Error" },
-      { status: 500 }
-    );
-  }
+  const data = await apiRes.json(); // typed response: { response_text, recallUsed, tone_tags }
+  return NextResponse.json(data);
 }
