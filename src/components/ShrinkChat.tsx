@@ -40,13 +40,12 @@ export default function ShrinkChat() {
     });
 
     if (!res.ok) {
-      const err = await res.text();
-      console.error("API error:", err);
+      console.error("API error:", await res.text());
       return;
     }
 
-    const { text } = await res.json();
-    const engineMessage = { sender: "engine", text };
+    const { response_text } = await res.json();
+    const engineMessage = { sender: "engine", text: response_text };
     setMessages((prev) => [...prev, engineMessage]);
   } catch (networkError) {
     console.error("Network error:", networkError);
@@ -54,6 +53,7 @@ export default function ShrinkChat() {
     setIsLoading(false);
   }
 };
+
 
 
   if (!isUnlocked) {
