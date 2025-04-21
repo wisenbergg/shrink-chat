@@ -1,4 +1,3 @@
-// shrink-chat/src/components/ShrinkChat.tsx
 "use client";
 
 import { useState, ChangeEvent, KeyboardEvent } from "react";
@@ -7,13 +6,28 @@ import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 
 export default function ShrinkChat() {
-  const [messages, setMessages] = useState([
-    { sender: "engine", text: "Welcome. Whenever you're ready, I'm here." }
+  // NOTE: `meta` is optional for now to support both engine and user messages.
+  // Later, consider replacing this with a discriminated union type like:
+  //
+  // type Message =
+  //   | { sender: "user"; text: string }
+  //   | { sender: "engine"; text: string; meta: { signal: string; tone_tags: string[]; recallUsed: boolean } }
+
+  const [messages, setMessages] = useState<
+    { sender: string; text: string; meta?: { signal: string; tone_tags: string[]; recallUsed: boolean } }[]
+  >([
+    {
+      sender: "engine",
+      text: "Welcome. Whenever you're ready, I'm here.",
+      meta: { signal: "medium", tone_tags: ["warm"], recallUsed: false }
+    }
   ]);
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
+  const [showDebug, setShowDebug] = useState<Record<number, boolean>>({});
 
   const correctPassword = process.env.NEXT_PUBLIC_SHRINK_PASS || "stillwater";
 
@@ -25,36 +39,62 @@ export default function ShrinkChat() {
     }
   };
 
- const handleSubmit = async () => {
-  if (!input.trim()) return;
-  const userMessage = { sender: "user", text: input.trim() };
-  setMessages((prev) => [...prev, userMessage]);
-  setInput("");
-  setIsLoading(true);
-
-  try {
-    const res = await fetch("/api/shrink", {
+  const sendFeedback = async (msgId: number, liked: boolean) => {
+    await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: userMessage.text })
+      body: JSON.stringify({ msgId, liked })
     });
+  };
 
-    if (!res.ok) {
-      console.error("API error:", await res.text());
-      return;
+  const promptFeedbackForm = async (msgId: number) => {
+    const comment = prompt("What didn’t feel right?");
+    if (!comment) return;
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ msgId, liked: false, comment })
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = {
+      sender: "user",
+      text: input.trim(),
+      meta: undefined
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/shrink", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: userMessage.text })
+      });
+
+      if (!res.ok) {
+        console.error("API error:", await res.text());
+        return;
+      }
+
+      const { response_text, signal, tone_tags, recallUsed } = await res.json();
+      const engineMessage = {
+        sender: "engine",
+        text: response_text,
+        meta: { signal, tone_tags, recallUsed }
+      };
+      setMessages((prev) => [...prev, engineMessage]);
+    } catch (networkError) {
+      console.error("Network error:", networkError);
+    } finally {
+      setIsLoading(false);
     }
-
-    const { response_text } = await res.json();
-    const engineMessage = { sender: "engine", text: response_text };
-    setMessages((prev) => [...prev, engineMessage]);
-  } catch (networkError) {
-    console.error("Network error:", networkError);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-
+  };
 
   if (!isUnlocked) {
     return (
@@ -80,15 +120,56 @@ export default function ShrinkChat() {
       <Card>
         <CardContent className="space-y-4 p-6 flex flex-col">
           {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`whitespace-pre-wrap p-3 rounded-xl max-w-[90%] text-sm leading-relaxed ${
-                msg.sender === "user"
-                  ? "bg-blue-100 self-end ml-auto"
-                  : "bg-gray-100 self-start"
-              }`}
-            >
-              {msg.text}
+            <div key={idx} className="flex flex-col gap-1">
+              <div
+                className={`whitespace-pre-wrap p-3 rounded-xl max-w-[90%] text-sm leading-relaxed ${
+                  msg.sender === "user"
+                    ? "bg-blue-100 self-end ml-auto"
+                    : "bg-gray-100 self-start"
+                }`}
+              >
+                {msg.text}
+              </div>
+
+              {msg.sender === "engine" && msg.meta && (
+                <div className="self-start ml-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setShowDebug((prev) => ({
+                        ...prev,
+                        [idx]: !prev[idx]
+                      }))
+                    }
+                  >
+                    ⚙️ Details
+                  </Button>
+                  {showDebug[idx] && (
+                    <div className="bg-gray-50 p-2 mt-1 rounded text-xs w-full whitespace-pre-wrap">
+                      <pre className="mb-2">
+                        {JSON.stringify(msg.meta, null, 2)}
+                      </pre>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => sendFeedback(idx, true)}
+                        >
+                          👍
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => promptFeedbackForm(idx)}
+                        >
+                          👎
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </CardContent>
