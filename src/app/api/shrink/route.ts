@@ -1,15 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-
+// src/app/api/shrink/route.ts
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 import { fetchRecall } from '@/lib/fetchRecall';
 import { inferToneFromEmbedding } from '@/lib/toneInference';
-import classificationCaps from '@/classification_caps.json';
-import engineTokenCaps from '@/engine_token_caps.json';
+import classificationCaps from '@/../../classification_caps.json';
+import engineTokenCaps from '@/../../engine_token_caps.json';
 import { loadClassifier, SignalLabel } from '@/lib/predictSignal';
 
 let classifier: Awaited<ReturnType<typeof loadClassifier>> | null = null;
@@ -17,49 +14,47 @@ let classifier: Awaited<ReturnType<typeof loadClassifier>> | null = null;
 export async function POST(request: NextRequest) {
   try {
     const { prompt } = (await request.json()) as { prompt: string };
-    if (!prompt) return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
-
-    
+    if (!prompt) {
+      return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
+    }
 
     classifier ??= await loadClassifier();
-    const signal = (await classifier.predict([prompt]))[0];
+    const signal = (await classifier.predict([prompt]))[0] as SignalLabel;
 
     const { response_text: recallText, recallUsed } = await fetchRecall(prompt);
 
-    console.log(
-  JSON.stringify({
-    prompt: prompt.slice(0, 60),
-    signal,
-    recallUsed,
-    recallSnippet: recallText?.slice(0, 60)
-  })
-);
-
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
     const embedInput = recallText || prompt;
-const embedding = await openai.embeddings.create({
-  model: 'text-embedding-ada-002',
-  input: embedInput
-});
-
+    const embedding = await openai.embeddings.create({
+      model: process.env.EMBED_MODEL || 'text-embedding-ada-002',
+      input: embedInput
+    });
     const tone_tags = await inferToneFromEmbedding(embedding.data[0].embedding);
+
+    const useAlt = Math.random() < 0.5;
+    const model = useAlt
+      ? process.env.CHAT_MODEL_ALT!
+      : process.env.CHAT_MODEL!;
+    const max_tokens = (engineTokenCaps as any)[signal] ?? 150;
+
+    const start = Date.now();
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model,
       messages: [
-        { role: 'system', content: (classificationCaps as any)[signal] || '' },
+        { role: 'system', content: classificationCaps?.[signal] ?? '' },
         { role: 'user', content: prompt }
       ],
-      max_tokens: (engineTokenCaps as any)[signal] || 150
+      max_tokens,
+      temperature: 0.7
     });
+    const ms = Date.now() - start;
+    const cost = completion.usage?.total_tokens;
+    console.log({ model, useAlt, ms, cost, signal, recallUsed });
 
-    return NextResponse.json({
-      response_text: completion.choices?.[0]?.message?.content?.trim() ?? '',
-      recallUsed,
-      tone_tags,
-      signal
-    });
+    const text = completion.choices?.[0]?.message?.content?.trim() ?? '';
+    return NextResponse.json({ response_text: text, recallUsed, tone_tags, signal });
   } catch (err: any) {
     console.error('shrinker error:', err);
-    return NextResponse.json({ error: err.message || 'internal' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
