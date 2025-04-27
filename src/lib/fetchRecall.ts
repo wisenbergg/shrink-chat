@@ -9,19 +9,26 @@ export interface RecallEntry {
   embedding: number[];
 }
 
-const CORPUS_PATH = path.join(
-  process.cwd(),
-  'data',
-  'shrink_corpus_v3_cleaned.embeddings.json'
-);
+const CORPUS_FILES = [
+  path.join(process.cwd(), 'data', 'shrink_corpus_v3_cleaned.embeddings.json'),
+  path.join(process.cwd(), 'data', 'shrink_corpus_v4_cleaned_with_embeddings.json')
+];
+
 
 let corpusCache: RecallEntry[] | null = null;
 function loadCorpus(): RecallEntry[] {
-  if (!corpusCache) {
-    const raw = fs.readFileSync(CORPUS_PATH, 'utf-8');
-    corpusCache = JSON.parse(raw) as RecallEntry[];
+  const all: RecallEntry[] = [];
+  for (const file of CORPUS_FILES) {
+    if (!fs.existsSync(file)) {
+      console.warn(`⚠️ Corpus file not found: ${file}`);
+      continue;
+    }
+    const fileContent = fs.readFileSync(file, 'utf-8');
+    const entries: RecallEntry[] = JSON.parse(fileContent);
+    all.push(...entries);
   }
-  return corpusCache;
+  corpusCache = all;
+  return corpusCache || [];
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
