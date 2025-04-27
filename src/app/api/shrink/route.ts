@@ -5,8 +5,8 @@ import OpenAI from 'openai';
 
 import { fetchRecall } from '@/lib/fetchRecall';
 import { inferToneFromEmbedding } from '@/lib/toneInference';
-import classificationCaps from '@/../../classification_caps.json';
-import engineTokenCaps from '@/../../engine_token_caps.json';
+import classificationCaps from '../../../../classification_caps.json';
+import engineTokenCaps from '../../../../engine_token_caps.json';
 import { loadClassifier, SignalLabel } from '@/lib/predictSignal';
 
 let classifier: Awaited<ReturnType<typeof loadClassifier>> | null = null;
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     classifier ??= await loadClassifier();
-    const signal = (await classifier.predict([prompt]))[0] as SignalLabel;
+    const [signal] = await classifier.predict([prompt]) as SignalLabel[];
 
     const { response_text: recallText, recallUsed } = await fetchRecall(prompt);
 
@@ -35,13 +35,14 @@ export async function POST(request: NextRequest) {
     const model = useAlt
       ? process.env.CHAT_MODEL_ALT!
       : process.env.CHAT_MODEL!;
-    const max_tokens = (engineTokenCaps as any)[signal] ?? 150;
+    const caps = engineTokenCaps as Record<string, number>;
+    const max_tokens = caps[signal] ?? 150;
 
     const start = Date.now();
     const completion = await openai.chat.completions.create({
       model,
       messages: [
-        { role: 'system', content: classificationCaps?.[signal] ?? '' },
+        { role: 'system', content: classificationCaps[signal] ?? '' },
         { role: 'user', content: prompt }
       ],
       max_tokens,
@@ -51,9 +52,17 @@ export async function POST(request: NextRequest) {
     const cost = completion.usage?.total_tokens;
     console.log({ model, useAlt, ms, cost, signal, recallUsed });
 
-    const text = completion.choices?.[0]?.message?.content?.trim() ?? '';
-    return NextResponse.json({ response_text: text, recallUsed, tone_tags, signal });
-  } catch (err: any) {
+    const text = completion.choices[0]?.message?.content?.trim() ?? '';
+    return NextResponse.json({
+  response_text: text,
+  recallUsed,
+  tone_tags,
+  signal,
+  model,        // ← add this
+  useAlt  // ← and this if you want
+});
+
+  } catch (err: unknown) {
     console.error('shrinker error:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
