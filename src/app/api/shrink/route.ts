@@ -1,3 +1,4 @@
+// src/app/api/shrink/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { handlePrompt } from '@/lib/core';
 
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
   let body: unknown;
   try {
     body = await request.json();
-  } catch (_parseError) {
+  } catch {
     return NextResponse.json<ErrorBody>(
       { error: 'Invalid JSON' },
       { status: 400 }
