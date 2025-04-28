@@ -24,46 +24,31 @@ export async function POST(request: NextRequest) {
     const { response_text: recallText, recallUsed } = await fetchRecall(prompt);
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-    const embedInput = recallText || prompt;
+    const embeddingInput = recallText || prompt;
     const embedding = await openai.embeddings.create({
-      model: process.env.EMBED_MODEL || 'text-embedding-ada-002',
-      input: embedInput
+      model: 'text-embedding-ada-002',
+      input: embeddingInput
     });
     const tone_tags = await inferToneFromEmbedding(embedding.data[0].embedding);
 
-    const useAlt = Math.random() < 0.5;
-    const model = useAlt
-      ? process.env.CHAT_MODEL_ALT!
-      : process.env.CHAT_MODEL!;
-    const caps = engineTokenCaps as Record<string, number>;
-    const max_tokens = caps[signal] ?? 150;
+    // Single-model logic restored
+    const model = 'gpt-4o-mini';
+    const max_tokens = (engineTokenCaps as Record<string, number>)[signal] || 150;
 
-    const start = Date.now();
     const completion = await openai.chat.completions.create({
       model,
       messages: [
-        { role: 'system', content: classificationCaps[signal] ?? '' },
+        { role: 'system', content: classificationCaps[signal] || '' },
         { role: 'user', content: prompt }
       ],
       max_tokens,
       temperature: 0.7
     });
-    const ms = Date.now() - start;
-    const cost = completion.usage?.total_tokens;
-    console.log({ model, useAlt, ms, cost, signal, recallUsed });
 
-    const text = completion.choices[0]?.message?.content?.trim() ?? '';
-    return NextResponse.json({
-  response_text: text,
-  recallUsed,
-  tone_tags,
-  signal,
-  model,        // ← add this
-  useAlt  // ← and this if you want
-});
-
-  } catch (err: unknown) {
+    const text = completion.choices[0]?.message?.content?.trim() || '';
+    return NextResponse.json({ response_text: text, recallUsed, tone_tags, signal });
+  } catch (err) {
     console.error('shrinker error:', err);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json({ error: (err as Error).message || 'Internal error' }, { status: 500 });
   }
 }

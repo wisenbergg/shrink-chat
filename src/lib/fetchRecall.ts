@@ -1,4 +1,4 @@
-// lib/fetchRecall.ts
+// src/lib/fetchRecall.ts
 import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
@@ -9,26 +9,30 @@ export interface RecallEntry {
   embedding: number[];
 }
 
+// List of corpus files to load
 const CORPUS_FILES = [
+  path.join(process.cwd(), 'data', 'shrink_corpus_v1_cleaned.embeddings.json'),
   path.join(process.cwd(), 'data', 'shrink_corpus_v3_cleaned.embeddings.json'),
   path.join(process.cwd(), 'data', 'shrink_corpus_v4_cleaned_with_embeddings.json')
 ];
 
-
 let corpusCache: RecallEntry[] | null = null;
+
 function loadCorpus(): RecallEntry[] {
+  if (corpusCache) return corpusCache;
   const all: RecallEntry[] = [];
-  for (const file of CORPUS_FILES) {
-    if (!fs.existsSync(file)) {
-      console.warn(`⚠️ Corpus file not found: ${file}`);
-      continue;
+  for (const filePath of CORPUS_FILES) {
+    try {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const entries = JSON.parse(raw) as RecallEntry[];
+      console.log(`Loaded ${entries.length} entries from ${path.basename(filePath)}`);
+      all.push(...entries);
+    } catch (error) {
+      console.warn(`Could not load corpus file: ${filePath}`, error);
     }
-    const fileContent = fs.readFileSync(file, 'utf-8');
-    const entries: RecallEntry[] = JSON.parse(fileContent);
-    all.push(...entries);
   }
   corpusCache = all;
-  return corpusCache || [];
+  return all;
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
@@ -45,7 +49,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
 export async function fetchRecall(
   prompt: string
 ): Promise<{ response_text: string; recallUsed: boolean }> {
-  if (typeof prompt !== 'string' || prompt.trim() === '') {
+  if (typeof prompt !== 'string' || !prompt.trim()) {
     return { response_text: '', recallUsed: false };
   }
 
@@ -53,13 +57,10 @@ export async function fetchRecall(
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const res = await openai.embeddings.create({
-      model: 'text-embedding-ada-002',
+      model: process.env.EMBED_MODEL || 'text-embedding-ada-002',
       input: prompt
     });
-    inputEmbedding = res.data?.[0]?.embedding;
-    if (!Array.isArray(inputEmbedding)) {
-      throw new Error('Invalid embedding response');
-    }
+    inputEmbedding = res.data[0].embedding;
   } catch (error) {
     console.error('fetchRecall embedding error:', error);
     return { response_text: '', recallUsed: false };
@@ -73,15 +74,11 @@ export async function fetchRecall(
     if (score > bestScore) {
       bestScore = score;
       bestEntry = entry;
-    
-    const corpus = loadCorpus();
-    if (corpus.length > 0) {}}
+    }
   }
 
   const threshold = parseFloat(process.env.RECALL_THRESHOLD || '0.75');
-
-  const effectiveThreshold = threshold;
-  if (bestEntry && bestScore >= effectiveThreshold) {
+  if (bestEntry && bestScore >= threshold) {
     return { response_text: bestEntry.response_text, recallUsed: true };
   }
 
