@@ -33,9 +33,11 @@ export async function handlePrompt(prompt: string) {
     { role: 'user', content: prompt }
   ] as ChatCompletionMessageParam[];
 
+  const chatModel = process.env.CHAT_MODEL ?? 'gpt-4o-mini';
+
   const first = await openai.chat.completions.create({
     model: process.env.CHAT_MODEL!,
-    messages: baseMessages,
+    messages: baseMessages as ChatCompletionMessageParam[],
     max_tokens: engineTokenCaps[signal]
   });
   let fullText = first.choices[0].message?.content?.trim() ?? '';
@@ -49,7 +51,7 @@ export async function handlePrompt(prompt: string) {
 
     const cont = await openai.chat.completions.create({
       model: process.env.CHAT_MODEL!,
-      messages: contMessages,
+      messages: contMessages as ChatCompletionMessageParam[],
       max_tokens: engineTokenCaps[signal] * 2
     });
     fullText += '\n' + (cont.choices[0].message?.content?.trim() ?? '');
