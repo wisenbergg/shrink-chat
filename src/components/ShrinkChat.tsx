@@ -111,8 +111,8 @@ export default function ShrinkChat() {
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen">
-      <Card className="flex-1 flex">
-        <CardContent className="…"> <div ref={scrollRef} className="flex-1 overflow-auto space-y-4 p-6"></div>
+      <Card className="flex flex-col flex-1 overflow-hidden">
+        <CardContent ref={scrollRef} className="space-y-4 p-6 flex flex-col flex-1 overflow-auto">
           {messages.map((msg, idx) => (
             <div key={idx} className="flex flex-col gap-1">
               <div

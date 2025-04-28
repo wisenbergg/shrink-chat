@@ -1,6 +1,6 @@
 {
-  "low": 50,
-  "medium": 100,
-  "high": 300,
-  "ambiguous": 75
+  "low": 100,
+  "medium": 250,
+  "high": 500,
+  "ambiguous": 200
 }
