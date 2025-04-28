@@ -22,6 +22,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "src/types/**/*.d.ts",
     ".next/types/**/*.ts"
 , "scripts/build_tone_corpus_from_v2.js"  ],
   "exclude": ["node_modules"]
