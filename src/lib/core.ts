@@ -1,26 +1,26 @@
 // src/lib/core.ts
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions/completions';
-import rawClassificationCaps from '@/classification_caps.json';
+// removed classificationCaps import
 import rawEngineTokenCaps from '@/engine_token_caps.json';
 import { loadClassifier, SignalLabel } from './predictSignal';
 import { fetchRecall } from './fetchRecall';
 import { inferToneFromEmbedding } from './toneInference';
 
-const classificationCaps = rawClassificationCaps as Record<SignalLabel, string>;
-const engineTokenCaps    = rawEngineTokenCaps    as Record<SignalLabel, number>;
+// only engineTokenCaps is used now
+const engineTokenCaps = rawEngineTokenCaps as Record<SignalLabel, number>;
 
 let classifier: Awaited<ReturnType<typeof loadClassifier>> | null = null;
 
 export async function handlePrompt(prompt: string) {
   if (!prompt.trim()) throw new Error('Missing prompt');
 
-  // 1) classify & recall
+  // 1) classification (signal) & recall
   classifier ??= await loadClassifier();
   const [signal] = await classifier.predict([prompt]);
   const { response_text: recallText, recallUsed } = await fetchRecall(prompt);
 
-  // 2) embed & tone
+  // 2) embedding & tone
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
   const embedRes = await openai.embeddings.create({
     model: process.env.EMBED_MODEL || 'text-embedding-ada-002',
@@ -28,7 +28,7 @@ export async function handlePrompt(prompt: string) {
   });
   const tone_tags = await inferToneFromEmbedding(embedRes.data[0].embedding);
 
-  // 3) trimmed persona-based system prompt + hard rules
+  // 3) persona-based system prompt + hard rules
   const systemPrompt = process.env.SYSTEM_PROMPT ?? `
 You are “Alex,” a deeply empathetic therapist-friend.  
 Speak in a warm, non-judgmental tone (150–200 words), validating feelings and offering perspective without advice.  
@@ -38,7 +38,7 @@ Hard Rules:
 • If user seems overwhelmed, ask permission before offering prompts.
 `.trim();
 
-  // 4) few-shot example to reinforce style
+  // 4) few-shot example
   const examples: ChatCompletionMessageParam[] = [
     { role: 'user',      content: 'I feel like I always fail at everything.' },
     { role: 'assistant', content: 'I’m so sorry you’re feeling that way. It can be really painful when it seems like nothing goes right. You don’t have to have it all figured out—sometimes just naming the frustration is enough to begin releasing it. What part of this feeling feels heaviest right now?' }
@@ -59,7 +59,7 @@ Hard Rules:
   });
   let fullText = first.choices[0].message?.content?.trim() ?? '';
 
-  // 6) continuation logic (unchanged)
+  // 6) continuation if cut off
   if (!/[.!?]"?$/.test(fullText)) {
     const contMessages = [
       { role: 'system',    content: systemPrompt },
@@ -75,7 +75,7 @@ Hard Rules:
     fullText += '\n' + (cont.choices[0].message?.content?.trim() ?? '');
   }
 
-  // 7) optional post-trim to 200 words
+  // 7) post-trim to 200 words
   const WORD_LIMIT = 200;
   const words = fullText.split(/\s+/);
   if (words.length > WORD_LIMIT) {
