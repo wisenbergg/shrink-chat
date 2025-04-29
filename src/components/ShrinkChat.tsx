@@ -1,172 +1,100 @@
 "use client";
 
-import { useState, ChangeEvent, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent, KeyboardEvent } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
-import { useRef, useEffect } from "react";
-
 
 export default function ShrinkChat() {
   const [messages, setMessages] = useState<
-    { sender: string; text: string; meta?: { signal: string; tone_tags: string[]; recallUsed: boolean } }[]
-  >([
-    {
-      sender: "engine",
-      text: "Welcome. Whenever you're ready, I'm here.",
-      meta: { signal: "medium", tone_tags: ["warm"], recallUsed: false }
-    }
-  ]);
+    { sender: "user" | "engine"; text: string; time: string; meta?: any }[]
+  >([{ sender: "engine", text: "Welcome. Whenever you're ready, I'm here.", time: now() }]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [showDebug, setShowDebug] = useState<Record<number, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
-  
+
+  function now() {
+    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
 
   const correctPassword = process.env.NEXT_PUBLIC_SHRINK_PASS || "stillwater";
-
   const handlePasswordSubmit = () => {
-    if (passwordInput.trim() === correctPassword) {
-      setIsUnlocked(true);
-    } else {
-      alert("Incorrect password.");
-    }
-  };
-
-  const sendFeedback = async (msgId: number, liked: boolean) => {
-    await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ msgId, liked })
-    });
-  };
-
-  const promptFeedbackForm = async (msgId: number) => {
-    const comment = prompt("What didn’t feel right?");
-    if (!comment) return;
-    await fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ msgId, liked: false, comment })
-    });
+    passwordInput.trim() === correctPassword ? setIsUnlocked(true) : alert("Incorrect password.");
   };
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
-
-    const userMessage = { sender: "user", text: input.trim() };
-    setMessages((prev) => [...prev, userMessage]);
+    const t = now();
+    setMessages((m) => [...m, { sender: "user", text: input.trim(), time: t }]);
     setInput("");
     setIsLoading(true);
-
     try {
-      const res = await fetch("/api/shrink", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userMessage.text })
-      });
-     if (!res.ok) {
-            const errText = await res.text();
-            setMessages(prev => [...prev, { sender: "engine", text: `Error: ${errText}` }]);
-            return;
-      }
+      const res = await fetch("/api/shrink", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: input.trim() }) });
+      if (!res.ok) throw new Error(await res.text());
       const { response_text, signal, tone_tags, recallUsed } = await res.json();
-      const engineMessage = {
-        sender: "engine",
-        text: response_text,
-        meta: { signal, tone_tags, recallUsed }
-      };
-      setMessages((prev) => [...prev, engineMessage]);
-    } catch (networkError) {
-      console.error("Network error:", networkError);
+      setMessages((m) => [...m, { sender: "engine", text: response_text, time: now(), meta: { signal, tone_tags, recallUsed } }]);
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsLoading(false);
     }
   };
-      useEffect(() => {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    }, [messages]
-    
-  );
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages]);
 
   if (!isUnlocked) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 className="text-2xl mb-4 font-semibold">Enter Passcode to Begin</h1>
-        <Input
-          placeholder="Enter password..."
-          value={passwordInput}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setPasswordInput(e.target.value)}
-          className="max-w-sm"
-        />
-        <Button onClick={handlePasswordSubmit} className="mt-4">
-          Unlock
-        </Button>
+        <Input placeholder="Enter password..." value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="max-w-sm" />
+        <Button onClick={handlePasswordSubmit} className="mt-4">Unlock</Button>
       </div>
     );
-    
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen">
-      <Card className="flex flex-col flex-1 overflow-hidden">
-        <CardContent ref={scrollRef} className="space-y-4 p-6 flex flex-col flex-1 overflow-auto">
+    <div className="max-w-2xl mx-auto py-6 px-4 flex flex-col h-screen">
+      <Card className="flex-1 flex overflow-hidden">
+        <CardContent ref={scrollRef} className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300">
           {messages.map((msg, idx) => (
-            <div key={idx} className="flex flex-col gap-1">
-              <div
-                className={`whitespace-pre-wrap break-words p-3 rounded-xl max-w-[90%] text-sm leading-relaxed ${
-                  msg.sender === "user" ? "bg-blue-100 self-end ml-auto" : "bg-gray-100 self-start"
-                }`}
-              >
+            <div key={idx} className="flex items-end gap-2">
+              {/* Avatar */}
+              <div className={msg.sender === "user" ? "order-2" : "order-1"}>
+                {msg.sender === "user" ? "🧑" : "🤖"}
+              </div>
+              {/* Message bubble */}
+              <div className={`whitespace-pre-wrap break-words p-3 rounded-xl max-w-[80%] text-sm leading-relaxed
+                ${msg.sender === "user" ? "bg-blue-100 self-end ml-auto" : "bg-gray-100 self-start"}`}>
                 {msg.text}
               </div>
-
-              {msg.sender === "engine" && msg.meta && (
-                <div className="self-start ml-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowDebug((prev) => ({ ...prev, [idx]: !prev[idx] }))}
-                  >
-                    ⚙️ Details
-                  </Button>
-                  {showDebug[idx] && (
-                    <div className="bg-gray-50 p-2 mt-1 rounded text-xs w-full whitespace-pre-wrap break-words">
-                      <pre className="mb-2">{JSON.stringify(msg.meta, null, 2)}</pre>
-                      <div className="flex gap-2">
-                        <Button variant="secondary" size="sm" onClick={() => sendFeedback(idx, true)}>
-                          👍
-                        </Button>
-                        <Button variant="secondary" size="sm" onClick={() => promptFeedbackForm(idx)}>
-                          👎
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Timestamp */}
+              <div className="text-xs text-gray-500">{msg.time}</div>
             </div>
           ))}
         </CardContent>
       </Card>
 
+      {/* Input area */}
       <div className="flex gap-2 mt-4">
-        <Input
+        <textarea
+          rows={1}
+          className="flex-1 resize-none border rounded p-2 focus:outline-none focus:ring focus:border-blue-300"
           placeholder="Type something…"
           value={input}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
-          onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
+          onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               handleSubmit();
             }
           }}
         />
-        <Button onClick={handleSubmit} disabled={isLoading}>
-          {isLoading ? "…" : "Send"}
-        </Button>
+        <Button onClick={handleSubmit} disabled={isLoading}>{isLoading ? "…" : "Send"}</Button>
       </div>
     </div>
   );
