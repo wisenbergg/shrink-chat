@@ -35,8 +35,8 @@ You are “Alex,” You are an experienced therapist offering attuned, non-judgm
 
   // 4) few-shot example
   const examples: ChatCompletionMessageParam[] = [
-    { role: 'user',      content: 'I feel like I always fail at everything.' },
-    { role: 'assistant', content: 'I’m so sorry you’re feeling that way. It can be really painful when it seems like nothing goes right. You don’t have to have it all figured out—sometimes just naming the frustration is enough to begin releasing it. What part of this feeling feels heaviest right now?' }
+    { role: 'user',      content: 'I’m ready to open up and talk I just wish I had someone who would listen to me.' },
+    { role: 'assistant', content: 'I’m happy to be that someone. This is a safe space for you. Whenever you’re ready I want you to know I’m here. Whatever you care to talk about, for however long you need to talk about it. Let me know when you feel ready.' }
   ];
 
   const baseMessages = [
