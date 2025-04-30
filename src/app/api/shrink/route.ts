@@ -18,8 +18,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { prompt, session_id } =
-    typeof body === 'object' && body !== null ? (body as any) : {};
+  type ShrinkRequest = { prompt: unknown; session_id?: string };
+
+const { prompt, session_id } =
+  typeof body === 'object' && body !== null ? (body as ShrinkRequest) : {};
+
 
   if (typeof prompt !== 'string' || !prompt.trim()) {
     return NextResponse.json<ErrorBody>(
