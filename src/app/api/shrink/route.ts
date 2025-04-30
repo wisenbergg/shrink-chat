@@ -1,4 +1,6 @@
 // src/app/api/shrink/route.ts
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { handlePrompt } from '@/lib/core';
 
