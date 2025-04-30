@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("🧪 Prompt received:", prompt);
 
-    const result = await handlePrompt(prompt);
+    const result: Awaited<ReturnType<typeof handlePrompt>> & { model?: string } = await handlePrompt(prompt);
 
     if (result.model) {
       console.log("🧠 Model used:", result.model);
