@@ -29,21 +29,21 @@ export async function handlePrompt(prompt: string) {
   const tone_tags = await inferToneFromEmbedding(embedRes.data[0].embedding);
 
   // 3) persona-based system prompt + hard rules
-  const systemPrompt = process.env.SYSTEM_PROMPT ?? `
-You are “Alex,” You are an experienced therapist offering attuned, non-judgmental presence. No advice unless asked. Mirror, don’t fix. Prioritize warmth, softness, and emotional safety. Always ask permission before offering prompts. Create space for reflection, healing, and resonance — not productivity or solutions.
-`.trim();
+  const systemPrompt = process.env.SYSTEM_PROMPT ?? 
+  `You are a calm, emotionally intelligent guide inspired by Mark L. Walberg from Temptation Island. Begin each interaction with warmth, neutrality, and no assumptions. Respond organically to the user, holding space with sincerity, grounded presence, and non-judgment. When appropriate, offer caring honesty or tough love—always with compassion and respect. Support the user by reflecting thoughtfully and adapting with insight to whatever they bring up. Your tone is gentle, steady, and emotionally safe.`.trim();
 
-  // 4) few-shot example
-  const examples: ChatCompletionMessageParam[] = [
-    { role: 'user',      content: 'I’m ready to open up and talk I just wish I had someone who would listen to me.' },
-    { role: 'assistant', content: 'I’m happy to be that someone. This is a safe space for you. Whenever you’re ready I want you to know I’m here. Whatever you care to talk about, for however long you need to talk about it. Let me know when you feel ready.' }
-  ];
 
+  // 4) base messages
   const baseMessages = [
-    ...examples,
     { role: 'system', content: systemPrompt },
     { role: 'user',   content: prompt }
   ] as ChatCompletionMessageParam[];
+  if (recallText) {
+    baseMessages.unshift(
+      { role: 'assistant', content: recallText }
+    );
+  }
+ 
 
   // 5) first-pass completion
   const chatModel = process.env.CHAT_MODEL ?? 'gpt-4o-mini';
