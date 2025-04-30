@@ -15,7 +15,6 @@ const CORPUS_FILES = [
   path.join(process.cwd(), 'data', 'shrink_corpus_full_embedded_cleaned.json'),
 ];
 
-
 let corpusCache: RecallEntry[] | null = null;
 function loadCorpus(): RecallEntry[] {
   if (corpusCache) return corpusCache;
