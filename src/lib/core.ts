@@ -1,85 +1,49 @@
-// src/lib/core.ts
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions/completions';
-// removed classificationCaps import
-import rawEngineTokenCaps from '@/engine_token_caps.json';
-import { loadClassifier, SignalLabel } from './predictSignal';
-import { fetchRecall } from './fetchRecall';
-import { inferToneFromEmbedding } from './toneInference';
+import { logSessionEntry } from './logSession'; // ✅ static import
 
-// only engineTokenCaps is used now
-const engineTokenCaps = rawEngineTokenCaps as Record<SignalLabel, number>;
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-let classifier: Awaited<ReturnType<typeof loadClassifier>> | null = null;
-
-export async function handlePrompt(prompt: string) {
+export async function handlePrompt(prompt: string, session_id?: string) {
   if (!prompt.trim()) throw new Error('Missing prompt');
 
-  // 1) classification (signal) & recall
-  classifier ??= await loadClassifier();
-  const [signal] = await classifier.predict([prompt]);
-  const { response_text: recallText, recallUsed } = await fetchRecall(prompt);
+  const chatModel = process.env.FINE_TUNED_MODEL ?? 'gpt-4o';
+  const temperature = Number(process.env.TEMPERATURE) || 0.52;
+  const maxTokens = Number(process.env.MAX_TOKENS) || 2048;
 
-  // 2) embedding & tone
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-  const embedRes = await openai.embeddings.create({
-    model: process.env.EMBED_MODEL || 'text-embedding-ada-002',
-    input: recallText || prompt
+  const messages: ChatCompletionMessageParam[] = [
+    { role: 'user', content: prompt }
+  ];
+
+  const response = await openai.chat.completions.create({
+    model: chatModel,
+    messages,
+    max_tokens: maxTokens,
+    temperature,
+    presence_penalty: 0,
+    frequency_penalty: 0
   });
-  const tone_tags = await inferToneFromEmbedding(embedRes.data[0].embedding);
 
-  // 3) persona-based system prompt + hard rules
-  const systemPrompt = process.env.SYSTEM_PROMPT ?? 
-  `You are a calm, emotionally intelligent guide inspired by Mark L. Walberg from Temptation Island. Begin each interaction with warmth, neutrality, and no assumptions. Respond organically to the user, holding space with sincerity, grounded presence, and non-judgment. When appropriate, offer caring honesty or tough love—always with compassion and respect. Support the user by reflecting thoughtfully and adapting with insight to whatever they bring up. Your tone is gentle, steady, and emotionally safe.`.trim();
+  const response_text = response.choices[0].message?.content?.trim() ?? '';
 
-
-  // 4) base messages
-  const baseMessages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user',   content: prompt }
-  ] as ChatCompletionMessageParam[];
-  if (recallText) {
-    baseMessages.unshift(
-      { role: 'assistant', content: recallText }
-    );
-  }
- 
-
-  // 5) first-pass completion
-  const chatModel = process.env.CHAT_MODEL ?? 'gpt-4o-mini';
-  const first = await openai.chat.completions.create({
-    model:      chatModel,
-    messages:   baseMessages,
-    max_tokens: engineTokenCaps[signal]
+  // 🔁 log session
+  logSessionEntry({
+    session_id: session_id || 'anonymous',
+    timestamp: Date.now(),
+    prompt,
+    response: response_text,
+    model: chatModel,
+    signal: 'none',
+    recallUsed: false
   });
-  let fullText = first.choices[0].message?.content?.trim() ?? '';
 
-  // 6) continuation if cut off
-  if (!/[.!?]"?$/.test(fullText)) {
-    const contMessages = [
-      { role: 'system',    content: systemPrompt },
-      { role: 'assistant', content: fullText },
-      { role: 'user',      content: 'Please continue the previous response.' }
-    ] as ChatCompletionMessageParam[];
-
-    const cont = await openai.chat.completions.create({
-      model:      chatModel,
-      messages:   contMessages,
-      max_tokens: engineTokenCaps[signal] * 2
-    });
-    fullText += '\n' + (cont.choices[0].message?.content?.trim() ?? '');
-  }
-
-  // 7) post-trim to 200 words
-  const WORD_LIMIT = 200;
-  const words = fullText.split(/\s+/);
-  if (words.length > WORD_LIMIT) {
-    const truncated = words.slice(0, WORD_LIMIT).join(' ');
-    const m = truncated.match(/[\s\S]*[\.!?]/);
-    fullText = m ? m[0] : truncated;
-  }
-
-  return { response_text: fullText, recallUsed, tone_tags, signal };
+  return {
+    response_text,
+    recallUsed: false,
+    tone_tags: [],
+    signal: 'none',
+    model: chatModel
+  };
 }
 
 export function healthCheck() {

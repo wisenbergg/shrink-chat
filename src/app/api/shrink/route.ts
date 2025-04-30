@@ -8,7 +8,6 @@ interface ErrorBody {
 }
 
 export async function POST(request: NextRequest) {
-  // 1) Parse JSON body
   let body: unknown;
   try {
     body = await request.json();
@@ -19,10 +18,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 2) Extract prompt
-  const prompt = typeof body === 'object' && body !== null && 'prompt' in body
-    ? (body as { prompt: unknown }).prompt
-    : undefined;
+  const { prompt, session_id } =
+    typeof body === 'object' && body !== null ? (body as any) : {};
 
   if (typeof prompt !== 'string' || !prompt.trim()) {
     return NextResponse.json<ErrorBody>(
@@ -31,11 +28,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3) Process with fine-tuned engine
   try {
     console.log("🧪 Prompt received:", prompt);
 
-    const result: Awaited<ReturnType<typeof handlePrompt>> & { model?: string } = await handlePrompt(prompt);
+    const result: Awaited<ReturnType<typeof handlePrompt>> & { model?: string } =
+      await handlePrompt(prompt, session_id);
 
     if (result.model) {
       console.log("🧠 Model used:", result.model);
