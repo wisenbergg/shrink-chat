@@ -12,8 +12,9 @@ export interface RecallEntry {
 
 // 1) Only load the fully embedded JSON
 const CORPUS_FILES = [
-  path.join(process.cwd(), 'data', 'shrink_corpus_full_embedded.json'),
+  path.join(process.cwd(), 'data', 'shrink_corpus_full_embedded_cleaned.json'),
 ];
+
 
 let corpusCache: RecallEntry[] | null = null;
 function loadCorpus(): RecallEntry[] {

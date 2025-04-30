@@ -1,4 +1,3 @@
-// src/app/api/shrink/route.ts
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,7 +19,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 2) Narrow to object & extract prompt
+  // 2) Extract prompt
   const prompt = typeof body === 'object' && body !== null && 'prompt' in body
     ? (body as { prompt: unknown }).prompt
     : undefined;
@@ -32,9 +31,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3) Delegate to core logic
+  // 3) Process with fine-tuned engine
   try {
+    console.log("🧪 Prompt received:", prompt);
+
     const result = await handlePrompt(prompt);
+
+    if (result.model) {
+      console.log("🧠 Model used:", result.model);
+    }
+
     return NextResponse.json(result);
   } catch (error: unknown) {
     const message =
