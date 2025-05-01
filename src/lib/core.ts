@@ -31,12 +31,16 @@ export async function handlePrompt(prompt: string, session_id?: string) {
   if (!prompt.trim()) throw new Error('Missing prompt');
 
   const chatModel = process.env.FINE_TUNED_MODEL ?? 'gpt-4o';
+  const systemPrompt = process.env.SYSTEM_PROMPT ?? "don't be overly eager or inquisitive, just relax, let them open up to you and don't force it. They already know you're here to help don't beat them over the head with it."
+  console.log("🧠 Model used:", chatModel);
   const temperature = Number(process.env.TEMPERATURE) || 0.52;
   const maxTokens = Number(process.env.MAX_TOKENS) || 2048;
 
   const memoryThreshold = 3;
-  const messages: ChatCompletionMessageParam[] = [];
-
+  const messages: ChatCompletionMessageParam[] = [
+    { role: 'system', content: systemPrompt }
+  ];
+  
 
   if (session_id) {
     const memory = await getMemoryForSession(session_id);
