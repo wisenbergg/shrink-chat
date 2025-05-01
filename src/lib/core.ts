@@ -35,7 +35,8 @@ export async function handlePrompt(prompt: string, session_id?: string) {
   const maxTokens = Number(process.env.MAX_TOKENS) || 2048;
 
   const memoryThreshold = 3;
-  let messages: ChatCompletionMessageParam[] = [];
+  const messages: ChatCompletionMessageParam[] = [];
+
 
   if (session_id) {
     const memory = await getMemoryForSession(session_id);
