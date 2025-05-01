@@ -24,6 +24,11 @@
 .DS_Store
 *.pem
 
+# ignore local session logs
+# NOTE: this is a temporary solution until we have a better way to handle session logs
+data/session_log.jsonl
+
+
 # debug
 npm-debug.log*
 yarn-debug.log*
