@@ -1,31 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["ES2020", "DOM"],
-    "allowJs": true,
-    "skipLibCheck": true,
     "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "module": "esnext",
+    "noImplicitAny": false,
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "incremental": true,
-    "plugins": [{ "name": "next" }],
-    "baseUrl": ".",                               
-    "paths": { "@/*": ["./src/*", "./*"]},
+    "lib": ["ES2020","DOM"],
     "types": ["node"],
-  
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
+    // …other existing settings…
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "src/types/**/*.d.ts",
-    ".next/types/**/*.ts"
-, "scripts/build_tone_corpus_from_v2.js"  ],
+  "include": ["next-env.d.ts","**/*.ts","**/*.tsx","src/types/**/*.d.ts"],
   "exclude": ["node_modules"]
 }
