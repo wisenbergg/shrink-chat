@@ -1,4 +1,4 @@
-// src/components/ShrinkChat.tsx (updated with strict typing)
+// src/components/ShrinkChat.tsx (remove emojis)
 
 "use client";
 
@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, ChangeEvent, KeyboardEvent } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-// Define the exact Message shapes
+// Define Message shapes
 interface UserMessage {
   sender: "user";
   text: string;
@@ -20,6 +20,17 @@ interface EngineMessage {
 }
 export type Message = UserMessage | EngineMessage;
 
+enum Role {
+  User = "user",
+  Assistant = "assistant",
+}
+// Define payload shape for API
+interface PriorMessagePayload {
+  sender: Role;
+  text: string;
+  time: string;
+}
+
 function now(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -30,8 +41,8 @@ export default function ShrinkChat() {
       sender: "engine",
       text: "Welcome. Whenever you're ready, I'm here.",
       time: now(),
-      meta: { signal: "medium", tone_tags: ["warm"], recallUsed: false }
-    }
+      meta: { signal: "medium", tone_tags: ["warm"], recallUsed: false },
+    },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -53,39 +64,40 @@ export default function ShrinkChat() {
     const prompt = input.trim();
     if (!prompt) return;
 
-    // Create a properly typed user message
+    // 1. Add the user message
     const userMessage: UserMessage = { sender: "user", text: prompt, time: now() };
     const newMessages = [...messages, userMessage];
-
-    // Update UI
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
 
     try {
-      // Prepare payload with correct types
-      const priorMessages: UserMessage[] = newMessages
-        .filter((m): m is UserMessage => m.sender === "user")
-        .map(({ sender, text, time }) => ({ sender, text, time }));
+      // 2. Map to API payload (convert 'engine' to 'assistant')
+      const priorMessages: PriorMessagePayload[] = newMessages.map((msg) => ({
+        sender: msg.sender === "user" ? Role.User : Role.Assistant,
+        text: msg.text,
+        time: msg.time,
+      }));
 
+      // 3. Call backend with full context
       const res = await fetch("/api/shrink", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, priorMessages: newMessages })
+        body: JSON.stringify({ prompt, priorMessages }),
       });
       if (!res.ok) {
         console.error("API error:", await res.text());
         return;
       }
-
       const { response_text, signal, tone_tags, recallUsed } = await res.json();
+
+      // 4. Append engine response
       const engineMessage: EngineMessage = {
         sender: "engine",
         text: response_text,
         time: now(),
-        meta: { signal, tone_tags, recallUsed }
+        meta: { signal, tone_tags, recallUsed },
       };
-
       setMessages((m) => [...m, engineMessage]);
     } catch (err) {
       console.error("Network error:", err);
@@ -125,9 +137,7 @@ export default function ShrinkChat() {
         >
           {messages.map((msg, idx) => (
             <div key={idx} className="flex items-end gap-2">
-              <div className={msg.sender === "user" ? "order-2" : "order-1"}>
-                {msg.sender === "user" ? "🧑" : "🤖"}
-              </div>
+              {/* Avatar removed */}
               <div
                 className={`whitespace-pre-wrap break-words p-3 rounded-xl max-w-[80%] text-sm leading-relaxed ${
                   msg.sender === "user" ? "bg-blue-100 self-end ml-auto" : "bg-gray-100 self-start"
