@@ -4,71 +4,48 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 export const runtime = 'nodejs';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
-// Define the shape of prior messages coming from the client
-interface PriorMessage {
-  sender: 'user' | 'assistant';
-  text: string;
-  time: string;
-}
-
-// If you extend your OpenAI response with custom fields, define them here
-interface APIResponseFields {
-  signal?: string;
-  tone_tags?: string[];
-}
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Parse the incoming JSON with type safety
-    const { prompt, priorMessages }: { prompt: string; priorMessages: PriorMessage[] } = await request.json();
+    // parse body & default history
+    const { prompt, threadId, priorMessages = [] } = await request.json();
 
-    // 2. Load your env vars (with sensible defaults)
-    const systemPrompt =
-      process.env.SYSTEM_PROMPT ?? "don't be overly inquisitive. relax";
-    const temperature = parseFloat(process.env.TEMPERATURE ?? '0.7');
-    const maxTokens = parseInt(process.env.MAX_TOKENS ?? '2048', 10);
-    const model = process.env.FINE_TUNED_MODEL!;
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
+    }
 
-    // 3. Build the full messages array for the chat completion
-    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+    // build messages array
+    const systemPrompt = process.env.SYSTEM_PROMPT ?? "be helpful";
+    const messages = [
       { role: 'system', content: systemPrompt },
-      ...priorMessages.map((msg: PriorMessage) => ({
-        role: msg.sender,
-        content: msg.text
+      ...priorMessages.map((m: any) => ({
+        role: m.sender === 'assistant' ? 'assistant' : 'user',
+        content: m.text
       })),
       { role: 'user', content: prompt }
     ];
 
-    // 4. Call OpenAI's chat completion endpoint
+    // call OpenAI
     const completion = await openai.chat.completions.create({
-      model,
+      model: process.env.FINE_TUNED_MODEL ?? 'gpt-4o',
       messages,
-      temperature,
-      max_tokens: maxTokens
+      temperature: parseFloat(process.env.TEMPERATURE ?? '0.7'),
+      max_tokens: parseInt(process.env.MAX_TOKENS ?? '2048', 10)
     });
 
-    // 5. Safely extract the assistant's reply
-    const responseText = completion.choices[0]?.message?.content ?? '';
-
-    // 6. If your model or pipeline adds metadata fields, pull them out
-    const apiResponse = completion as unknown as APIResponseFields;
-    const signal = apiResponse.signal ?? 'unknown';
-    const tone_tags = apiResponse.tone_tags ?? [];
-
-    // 7. Return a structured JSON response to the frontend
-    return NextResponse.json({
-      response_text: responseText,
-      signal,
-      tone_tags,
-      recallUsed: false
-    });
+    const text = completion.choices[0].message?.content ?? '';
+    return NextResponse.json(
+      { response_text: text, signal: 'none', tone_tags: [], recallUsed: false },
+      { status: 200 }
+    );
   } catch (err) {
-    console.error('Error in /api/shrink:', err);
-    return NextResponse.error();
+    console.error('Error in /api/shrink POST:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
+}
+
+// optional ping
+export async function GET() {
+  return NextResponse.json({ status: 'shrink endpoint ready' }, { status: 200 });
 }
