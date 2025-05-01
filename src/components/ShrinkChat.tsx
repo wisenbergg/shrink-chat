@@ -1,13 +1,24 @@
+// src/components/ShrinkChat.tsx (updated with strict typing)
+
 "use client";
 
 import { useState, useRef, useEffect, ChangeEvent, KeyboardEvent } from "react";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
-type MessageMeta = { signal: string; tone_tags: string[]; recallUsed: boolean };
-type Message =
-  | { sender: "user"; text: string; time: string }
-  | { sender: "engine"; text: string; time: string; meta: MessageMeta };
+// Define the exact Message shapes
+interface UserMessage {
+  sender: "user";
+  text: string;
+  time: string;
+}
+interface EngineMessage {
+  sender: "engine";
+  text: string;
+  time: string;
+  meta: { signal: string; tone_tags: string[]; recallUsed: boolean };
+}
+export type Message = UserMessage | EngineMessage;
 
 function now(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -42,25 +53,40 @@ export default function ShrinkChat() {
     const prompt = input.trim();
     if (!prompt) return;
 
-    setMessages((m) => [...m, { sender: "user", text: prompt, time: now() }]);
+    // Create a properly typed user message
+    const userMessage: UserMessage = { sender: "user", text: prompt, time: now() };
+    const newMessages = [...messages, userMessage];
+
+    // Update UI
+    setMessages(newMessages);
     setInput("");
     setIsLoading(true);
 
     try {
+      // Prepare payload with correct types
+      const priorMessages: UserMessage[] = newMessages
+        .filter((m): m is UserMessage => m.sender === "user")
+        .map(({ sender, text, time }) => ({ sender, text, time }));
+
       const res = await fetch("/api/shrink", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt, priorMessages: newMessages })
       });
       if (!res.ok) {
         console.error("API error:", await res.text());
         return;
       }
+
       const { response_text, signal, tone_tags, recallUsed } = await res.json();
-      setMessages((m) => [
-        ...m,
-        { sender: "engine", text: response_text, time: now(), meta: { signal, tone_tags, recallUsed } }
-      ]);
+      const engineMessage: EngineMessage = {
+        sender: "engine",
+        text: response_text,
+        time: now(),
+        meta: { signal, tone_tags, recallUsed }
+      };
+
+      setMessages((m) => [...m, engineMessage]);
     } catch (err) {
       console.error("Network error:", err);
     } finally {
