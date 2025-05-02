@@ -1,8 +1,9 @@
-// src/components/ShrinkChat.tsx (remove emojis)
+// src/components/ShrinkChat.tsx
 
 "use client";
 
 import { useState, useRef, useEffect, ChangeEvent, KeyboardEvent } from "react";
+import { v4 as uuid } from "uuid";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
@@ -24,6 +25,7 @@ enum Role {
   User = "user",
   Assistant = "assistant",
 }
+
 // Define payload shape for API
 interface PriorMessagePayload {
   sender: Role;
@@ -36,6 +38,9 @@ function now(): string {
 }
 
 export default function ShrinkChat() {
+  // generate a persistent threadId for this chat session
+  const [threadId] = useState(() => uuid());
+
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "engine",
@@ -79,14 +84,16 @@ export default function ShrinkChat() {
         time: msg.time,
       }));
 
-      // 3. Call backend with full context
+      // 3. Call backend with full context, including threadId
       const res = await fetch("/api/shrink", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, priorMessages }),
+        body: JSON.stringify({ prompt, threadId, priorMessages }),
       });
       if (!res.ok) {
-        console.error("API error:", await res.text());
+        const errText = await res.text();
+        console.error("API error:", errText);
+        setIsLoading(false);
         return;
       }
       const { response_text, signal, tone_tags, recallUsed } = await res.json();
@@ -106,6 +113,7 @@ export default function ShrinkChat() {
     }
   };
 
+  // auto‑scroll on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -137,7 +145,6 @@ export default function ShrinkChat() {
         >
           {messages.map((msg, idx) => (
             <div key={idx} className="flex items-end gap-2">
-              {/* Avatar removed */}
               <div
                 className={`whitespace-pre-wrap break-words p-3 rounded-xl max-w-[80%] text-sm leading-relaxed ${
                   msg.sender === "user" ? "bg-blue-100 self-end ml-auto" : "bg-gray-100 self-start"
