@@ -1,6 +1,6 @@
 // src/lib/logChat.ts
 
-import { supabaseAdmin } from '@/utils/supabase/server';
+import { supabaseAdmin } from '../utils/supabase/server';
 
 export async function logChat(entry: {
   threadId: string;
