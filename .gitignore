@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# ignore local SQLite chat DB
+shrink_chat.db
+
+
 # ignore local session logs
 # NOTE: this is a temporary solution until we have a better way to handle session logs
 data/session_log.jsonl
@@ -50,3 +54,4 @@ next-env.d.ts
 venv/
 
 .env*.local
+shrink_chat.db

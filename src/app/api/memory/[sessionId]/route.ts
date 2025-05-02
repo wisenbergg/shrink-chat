@@ -1,22 +1,33 @@
 // src/app/api/memory/[sessionId]/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getMemoryForSession } from '@/lib/sessionMemory';
 
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest) {
-  // extract the last segment of the path as the sessionId:
-  const pathname = request.nextUrl.pathname;       // e.g. "/api/memory/test"
-  const parts = pathname.split('/');               // ["", "api", "memory", "test"]
-  const sessionId = parts[parts.length - 1];       // "test"
+// Zod schema for validation
+const ParamsSchema = z.object({
+  sessionId: z.string().min(1),
+});
 
-  if (!sessionId) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ sessionId: string }> }
+) {
+  // 1) Await the params promise to get a real object
+  const { sessionId } = await context.params;
+
+  // 2) Validate with Zod
+  const parsed = ParamsSchema.safeParse({ sessionId });
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: 'Missing sessionId in URL' },
+      { error: 'Missing or invalid sessionId' },
       { status: 400 }
     );
   }
 
+  // 3) Load memory
   try {
     const memory = await getMemoryForSession(sessionId);
     return NextResponse.json({ sessionId, memory }, { status: 200 });
@@ -29,6 +40,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Reject any non‑GET methods
 export function POST() {
   return NextResponse.json(
     { error: 'Method Not Allowed' },

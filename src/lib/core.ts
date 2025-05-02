@@ -1,85 +1,95 @@
 // src/lib/core.ts
 
 import OpenAI from 'openai';
-import fs from 'fs';
-import path from 'path';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions/completions';
 import { logSessionEntry } from './logSession';
+import { logChat } from './logChat';
+import { getMemoryForSession, getMemoryForThreads, MemoryTurn } from './sessionMemory';
+
+export interface PromptInput {
+  // support either single or multiple threads
+  sessionId?: string;
+  threadIds?: string[];
+  prompt: string;
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+}
+
+export interface PromptResult {
+  response_text: string;
+  recallUsed: boolean;
+  tone_tags: string[];
+  signal: string;
+  model: string;
+}
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-const LOG_PATH = path.join(process.cwd(), 'data', 'session_log.jsonl');
 
-interface MemoryTurn {
-  prompt: string;
-  response: string;
-}
+export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
+  const { sessionId, threadIds, prompt, history = [] } = input;
 
-async function getMemoryForSession(session_id: string): Promise<MemoryTurn[]> {
-  try {
-    const file = fs.readFileSync(LOG_PATH, 'utf-8');
-    const lines = file.split('\n').filter(Boolean);
-    return lines
-      .map(line => JSON.parse(line))
-      .filter(entry => entry.session_id === session_id)
-      .map(entry => ({ prompt: entry.prompt, response: entry.response }))
-      .slice(-10);
-  } catch (err) {
-    console.warn('⚠️ No memory available:', err);
-    return [];
-  }
-}
-
-export async function handlePrompt(prompt: string, session_id?: string) {
   if (!prompt.trim()) throw new Error('Missing prompt');
 
-  const chatModel = process.env.FINE_TUNED_MODEL ?? 'gpt-4o';
-  const systemPrompt = process.env.SYSTEM_PROMPT ?? "don't be overly inquisitive. relax and hold space for the user.";
-  console.log("🧠 Model used:", chatModel);
-  
-  const temperature = Number(process.env.TEMPERATURE) || 0.70;
-  const maxTokens = Number(process.env.MAX_TOKENS) || 2048;
-
-  const messages: ChatCompletionMessageParam[] = [
+  const systemPrompt =
+    process.env.SYSTEM_PROMPT ??
+    "don't be overly inquisitive; relax and hold space.";
+  const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt }
   ];
 
-  if (session_id) {
-    const memory = await getMemoryForSession(session_id);
+  // 1) multi‑thread recall if provided
+  if (threadIds && threadIds.length) {
+    const memory: MemoryTurn[] = await getMemoryForThreads(threadIds, 5);
+    for (const turn of memory) {
+      messages.push({ role: 'user', content: turn.prompt });
+      messages.push({ role: 'assistant', content: turn.response });
+    }
+  }
+  // 2) single‑thread fallback
+  else if (sessionId) {
+    const memory = await getMemoryForSession(sessionId, 10);
     for (const turn of memory) {
       messages.push({ role: 'user', content: turn.prompt });
       messages.push({ role: 'assistant', content: turn.response });
     }
   }
 
+  // 3) any in‑flight history
+  for (const h of history) {
+    messages.push({ role: h.role, content: h.content });
+  }
+
+  // 4) log user  ← COMMENTED OUT to avoid duplicate logging in core
+  // logChat({ threadId: sessionId ?? threadIds![0] ?? 'anon', turn: history.length + 1, role: 'user', content: prompt });
+
+  // 5) call OpenAI
   messages.push({ role: 'user', content: prompt });
-
-  const response = await openai.chat.completions.create({
-    model: chatModel,
+  const completion = await openai.chat.completions.create({
+    model: process.env.FINE_TUNED_MODEL ?? 'gpt-4o',
     messages,
-    max_tokens: maxTokens,
-    temperature,
-    presence_penalty: 0,
-    frequency_penalty: 0
+    temperature: Number(process.env.TEMPERATURE) || 0.7,
+    max_tokens: Number(process.env.MAX_TOKENS) || 2048
   });
+  const response = completion.choices[0].message?.content?.trim() ?? '';
 
-  const response_text = response.choices[0].message?.content?.trim() ?? '';
+  // 6) log assistant  ← COMMENTED OUT to centralize logging in route handler
+  // logChat({ threadId: sessionId ?? threadIds![0] ?? 'anon', turn: history.length + 2, role: 'assistant', content: response });
 
+  // 7) JSONL session log
   logSessionEntry({
-    session_id: session_id || 'anonymous',
+    session_id: sessionId ?? 'anonymous',
     timestamp: Date.now(),
     prompt,
-    response: response_text,
-    model: chatModel,
+    response,
+    model: completion.model,
     signal: 'none',
-    recallUsed: false
+    recallUsed: Boolean(sessionId || (threadIds && threadIds.length))
   });
 
   return {
-    response_text,
-    recallUsed: false,
+    response_text: response,
+    recallUsed: Boolean(sessionId || (threadIds && threadIds.length)),
     tone_tags: [],
     signal: 'none',
-    model: chatModel
+    model: completion.model
   };
 }
 

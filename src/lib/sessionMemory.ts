@@ -3,50 +3,68 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-/**
- * Exactly the shape of each JSON line in session_log.jsonl
- */
-interface SessionLogEntry {
-  session_id: string;
-  prompt: string;
-  response: string;
-  // add other logged fields here if needed, e.g. timestamp?: number;
-}
+///////////////////////
+// Types & Constants //
+///////////////////////
 
 export interface MemoryTurn {
+  prompt: string;
+  response: string;
+  timestamp: number;
+}
+
+interface SessionLogEntry {
+  session_id: string;
+  timestamp: number;
   prompt: string;
   response: string;
 }
 
 const SESSION_LOG = path.join(process.cwd(), 'data', 'session_log.jsonl');
 
-/**
- * Load the last `limit` turns for a given session ID from JSONL.
- */
+/////////////////////////
+// Single‑thread fetch //
+/////////////////////////
+
 export async function getMemoryForSession(
   sessionId: string,
   limit = 10
 ): Promise<MemoryTurn[]> {
   try {
     const data = await fs.readFile(SESSION_LOG, 'utf-8');
-
-    const entries = data
+    return data
       .split('\n')
       .filter(Boolean)
-      .map((line: string) => {
-        // parse JSON, then assert it matches our SessionLogEntry shape
-        return JSON.parse(line) as unknown as SessionLogEntry;
-      })
-      .filter((entry) => entry.session_id === sessionId)
+      .map(line => JSON.parse(line) as SessionLogEntry)
+      .filter(entry => entry.session_id === sessionId)
       .slice(-limit)
-      .map((entry) => ({
+      .map(entry => ({
         prompt: entry.prompt,
         response: entry.response,
+        timestamp: entry.timestamp
       }));
-
-    return entries;
-  } catch (err) {
-    console.warn('⚠️ No memory available for', sessionId, err);
+  } catch {
     return [];
   }
+}
+
+///////////////////////////
+// Multi‑thread fetcher  //
+///////////////////////////
+
+/**
+ * Fetch and merge memory from multiple threadIds.
+ */
+export async function getMemoryForThreads(
+  threadIds: string[],
+  limitPerThread = 5
+): Promise<MemoryTurn[]> {
+  const allMemory: MemoryTurn[] = [];
+  for (const id of threadIds) {
+    const mem = await getMemoryForSession(id, limitPerThread);
+    allMemory.push(...mem);
+  }
+  // sort by timestamp so that oldest entries come first
+  allMemory.sort((a, b) => a.timestamp - b.timestamp);
+  return allMemory;
 }

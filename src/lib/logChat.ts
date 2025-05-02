@@ -1,46 +1,37 @@
-// src/lib/logChat.ts
+// File: src/lib/logChat.ts
 import Database from 'better-sqlite3';
-import { v4 as uuid } from 'uuid';
 import path from 'path';
+import { v4 as uuid } from 'uuid';
 
-// open or create the same shrink_memory.db you’re using
-const db = new Database(path.join(process.cwd(), 'shrink_memory.db'));
+const DB_FILE = process.env.DB_FILE || path.resolve(process.cwd(), 'shrink_chat.db');
+const db = new Database(DB_FILE);
 
-// ensure table exists (you could also run a migration)
+// Ensure table exists before any logging
 db.exec(`
   CREATE TABLE IF NOT EXISTS chat_logs (
-    id TEXT PRIMARY KEY,
-    thread_id TEXT,
-    turn INTEGER,
-    role TEXT,
-    content TEXT,
-    created_at INTEGER
+    id         TEXT PRIMARY KEY,
+    thread_id  TEXT NOT NULL,
+    turn       INTEGER NOT NULL,
+    role       TEXT NOT NULL,
+    content    TEXT NOT NULL,
+    created_at INTEGER NOT NULL
   );
 `);
+console.log(`🔒 logChat initialized; using DB_FILE=${DB_FILE}`);
 
-const insert = db.prepare(`
+const insertStmt = db.prepare(`
   INSERT INTO chat_logs (id, thread_id, turn, role, content, created_at)
   VALUES (@id, @thread_id, @turn, @role, @content, @created_at)
 `);
 
-export type LogEntry = {
-  threadId: string;
-  turn: number;
-  role: 'user' | 'assistant';
-  content: string;
-};
-
-export function logChat(entry: LogEntry) {
-  try {
-    insert.run({
-      id: uuid(),
-      thread_id: entry.threadId,
-      turn: entry.turn,
-      role: entry.role,
-      content: entry.content,
-      created_at: Date.now(),
-    });
-  } catch (e) {
-    console.error('⚠️ logChat failed', e);
-  }
+export function logChat(entry: { threadId: string; turn: number; role: 'user'|'assistant'; content: string }) {
+  insertStmt.run({
+    id: uuid(),
+    thread_id: entry.threadId,
+    turn: entry.turn,
+    role: entry.role,
+    content: entry.content,
+    created_at: Date.now()
+  });
+  console.log(`🔒 logged chat turn ${entry.turn} for thread ${entry.threadId}`);
 }
