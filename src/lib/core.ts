@@ -2,11 +2,9 @@
 
 import OpenAI from 'openai';
 import { logSessionEntry } from './logSession';
-import { logChat } from './logChat';
 import { getMemoryForSession, getMemoryForThreads, MemoryTurn } from './sessionMemory';
 
 export interface PromptInput {
-  // support either single or multiple threads
   sessionId?: string;
   threadIds?: string[];
   prompt: string;
@@ -57,10 +55,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     messages.push({ role: h.role, content: h.content });
   }
 
-  // 4) log user  ← COMMENTED OUT to avoid duplicate logging in core
-  // logChat({ threadId: sessionId ?? threadIds![0] ?? 'anon', turn: history.length + 1, role: 'user', content: prompt });
-
-  // 5) call OpenAI
+  // 4) call OpenAI
   messages.push({ role: 'user', content: prompt });
   const completion = await openai.chat.completions.create({
     model: process.env.FINE_TUNED_MODEL ?? 'gpt-4o',
@@ -70,10 +65,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   });
   const response = completion.choices[0].message?.content?.trim() ?? '';
 
-  // 6) log assistant  ← COMMENTED OUT to centralize logging in route handler
-  // logChat({ threadId: sessionId ?? threadIds![0] ?? 'anon', turn: history.length + 2, role: 'assistant', content: response });
-
-  // 7) JSONL session log
+  // 5) JSONL session log
   logSessionEntry({
     session_id: sessionId ?? 'anonymous',
     timestamp: Date.now(),
