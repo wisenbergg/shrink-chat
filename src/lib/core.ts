@@ -1,4 +1,4 @@
-// src/lib/core.ts
+// File: src/lib/core.ts
 
 import OpenAI from 'openai';
 import { logSessionEntry } from './logSession';
@@ -26,15 +26,13 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
 
   if (!prompt.trim()) throw new Error('Missing prompt');
 
-  // 1) build the initial system message
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
-    "don't be overly inquisitive; relax and hold space.";
+    "don't be overly inquisitive; relax and hold space. When the user begins to open up about their feelings is the moment to dig deeper...";
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt }
   ];
 
-  // 2) replay memory (multi‑thread or single‑thread)
   if (threadIds && threadIds.length) {
     const memory: MemoryTurn[] = await getMemoryForThreads(threadIds, 5);
     for (const turn of memory) {
@@ -49,24 +47,12 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     }
   }
 
-  // 3) replay any in‑flight priorMessages
-  for (const h of history) {
-    messages.push({ role: h.role, content: h.content });
-  }
-
-  // 4) finally the new user prompt
+  for (const h of history) messages.push({ role: h.role, content: h.content });
   messages.push({ role: 'user', content: prompt });
 
-  // 5) choose model: MICRO_MODEL for the very first turn (no history & no memory), else FINE_TUNED_MODEL
-  const useMicro =
-    history.length === 0 &&
-    (!threadIds || threadIds.length === 0) &&
-    !sessionId;
-  const modelToUse = useMicro
-    ? process.env.MICRO_MODEL!
-    : process.env.FINE_TUNED_MODEL!;
+  const useMicro = history.length === 0 && (!threadIds || threadIds.length === 0) && !sessionId;
+  const modelToUse = useMicro ? process.env.MICRO_MODEL! : process.env.FINE_TUNED_MODEL!;
 
-  // 6) call OpenAI
   const completion = await openai.chat.completions.create({
     model: modelToUse,
     messages,
@@ -75,20 +61,19 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   });
   const response = completion.choices[0].message?.content?.trim() ?? '';
 
-  // 7) log to session table
-  logSessionEntry({
+  // Log session entry without sending timestamp so DB default applies
+  await logSessionEntry({
     session_id: sessionId ?? threadIds?.[0] ?? 'anonymous',
-    timestamp: Date.now(),
     prompt,
     response,
     model: completion.model,
     signal: 'none',
-    recallUsed: Boolean(sessionId || (threadIds && threadIds.length))
+    recallUsed: Boolean(sessionId || (threadIds && threadIds.length > 0))
   });
 
   return {
     response_text: response,
-    recallUsed: Boolean(sessionId || (threadIds && threadIds.length)),
+    recallUsed: Boolean(sessionId || (threadIds && threadIds.length > 0)),
     tone_tags: [],
     signal: 'none',
     model: completion.model
