@@ -26,6 +26,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
 
   if (!prompt.trim()) throw new Error('Missing prompt');
 
+  // 1) build the initial system message
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
     "don't be overly inquisitive; relax and hold space.";
@@ -33,16 +34,14 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     { role: 'system', content: systemPrompt }
   ];
 
-  // 1) multi‑thread recall if provided
+  // 2) replay memory (multi‑thread or single‑thread)
   if (threadIds && threadIds.length) {
     const memory: MemoryTurn[] = await getMemoryForThreads(threadIds, 5);
     for (const turn of memory) {
       messages.push({ role: 'user', content: turn.prompt });
       messages.push({ role: 'assistant', content: turn.response });
     }
-  }
-  // 2) single‑thread fallback
-  else if (sessionId) {
+  } else if (sessionId) {
     const memory = await getMemoryForSession(sessionId, 10);
     for (const turn of memory) {
       messages.push({ role: 'user', content: turn.prompt });
@@ -50,24 +49,35 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     }
   }
 
-  // 3) any in‑flight history
+  // 3) replay any in‑flight priorMessages
   for (const h of history) {
     messages.push({ role: h.role, content: h.content });
   }
 
-  // 4) call OpenAI
+  // 4) finally the new user prompt
   messages.push({ role: 'user', content: prompt });
+
+  // 5) choose model: MICRO_MODEL for the very first turn (no history & no memory), else FINE_TUNED_MODEL
+  const useMicro =
+    history.length === 0 &&
+    (!threadIds || threadIds.length === 0) &&
+    !sessionId;
+  const modelToUse = useMicro
+    ? process.env.MICRO_MODEL!
+    : process.env.FINE_TUNED_MODEL!;
+
+  // 6) call OpenAI
   const completion = await openai.chat.completions.create({
-    model: process.env.FINE_TUNED_MODEL ?? 'gpt-4o',
+    model: modelToUse,
     messages,
     temperature: Number(process.env.TEMPERATURE) || 0.7,
     max_tokens: Number(process.env.MAX_TOKENS) || 2048
   });
   const response = completion.choices[0].message?.content?.trim() ?? '';
 
-  // 5) JSONL session log
+  // 7) log to session table
   logSessionEntry({
-    session_id: sessionId ?? 'anonymous',
+    session_id: sessionId ?? threadIds?.[0] ?? 'anonymous',
     timestamp: Date.now(),
     prompt,
     response,
