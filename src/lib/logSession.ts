@@ -9,7 +9,7 @@ export interface SessionEntry {
   response: string;
   model?: string;
   signal?: string;
-  recallUsed: boolean;
+  recallUsed: boolean;    // your code uses camelCase
 }
 
 export async function logSessionEntry(entry: SessionEntry) {
@@ -22,7 +22,7 @@ export async function logSessionEntry(entry: SessionEntry) {
       response:    entry.response,
       model:       entry.model,
       signal:      entry.signal,
-      recallUsed:  entry.recallUsed
+      recallused:  entry.recallUsed   // ← map to lowercase column
     });
 
   if (error) {
