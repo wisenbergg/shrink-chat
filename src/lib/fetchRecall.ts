@@ -24,10 +24,10 @@ function loadCorpus(): RecallEntry[] {
     try {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const entries = JSON.parse(raw) as RecallEntry[];
-      console.log(`Loaded ${entries.length} entries from ${path.basename(filePath)}`);
+      console.log(`[RAG DEBUG] Loaded ${entries.length} entries from ${path.basename(filePath)}`);
       all.push(...entries);
     } catch (err) {
-      console.warn(`Could not load corpus file: ${filePath}`, err);
+      console.warn(`[RAG DEBUG] Could not load corpus file: ${filePath}`, err);
     }
   }
   corpusCache = all;
@@ -56,6 +56,7 @@ export async function fetchRecall(prompt: string): Promise<{
   }>;
 }> {
   if (typeof prompt !== 'string' || !prompt.trim()) {
+    console.warn('[RAG DEBUG] Empty or invalid prompt');
     return { recallUsed: false, results: [] };
   }
 
@@ -67,27 +68,36 @@ export async function fetchRecall(prompt: string): Promise<{
       input: prompt
     });
     inputEmbedding = res.data[0].embedding;
+    console.log('[RAG DEBUG] Input embedding generated, length:', inputEmbedding.length);
   } catch (err) {
-    console.error('fetchRecall embedding error:', err);
+    console.error('[RAG DEBUG] fetchRecall embedding error:', err);
     return { recallUsed: false, results: [] };
   }
 
   const corpus = loadCorpus();
   if (corpus.length === 0) {
-    console.warn('⚠️  Corpus is empty – no embeddings loaded.');
+    console.warn('[RAG DEBUG] Corpus is empty — no embeddings loaded.');
     return { recallUsed: false, results: [] };
   }
 
-  // Compute similarity scores
+  console.log('[RAG DEBUG] Calculating similarity scores...');
   const scoredEntries = corpus.map(entry => ({
     ...entry,
     score: cosineSimilarity(inputEmbedding, entry.embedding)
   }));
 
-  // Sort by score descending
   scoredEntries.sort((a, b) => b.score - a.score);
 
-  // Select top N (e.g., top 3)
+  if (scoredEntries.length > 0) {
+    console.log('[RAG DEBUG] Top result:', {
+      topic: scoredEntries[0].topic,
+      discipline: scoredEntries[0].discipline,
+      score: scoredEntries[0].score
+    });
+  } else {
+    console.warn('[RAG DEBUG] No entries scored — empty or failed comparison.');
+  }
+
   const topN = Number(process.env.RECALL_TOP_N) || 3;
   const threshold = Number(process.env.RECALL_THRESHOLD) || 0.8;
   const topResults = scoredEntries
@@ -100,6 +110,11 @@ export async function fetchRecall(prompt: string): Promise<{
       content: e.content,
       score: e.score
     }));
+
+  console.log(`[RAG DEBUG] Top results after threshold (${threshold}):`, topResults.length);
+  topResults.forEach((e, idx) => {
+    console.log(`[RAG DEBUG] Passed ${idx + 1}: ${e.topic} (${e.discipline}) — Score: ${e.score}`);
+  });
 
   return {
     recallUsed: topResults.length > 0,
