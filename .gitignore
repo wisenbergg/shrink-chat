@@ -54,4 +54,3 @@ next-env.d.ts
 venv/
 
 .env*.local
-shrink_chat.db

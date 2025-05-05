@@ -1,11 +1,5 @@
 // src/lib/sessionMemory.ts
-
-import fs from 'fs/promises';
-import path from 'path';
-
-///////////////////////
-// Types & Constants //
-///////////////////////
+import { supabaseAdmin } from '@/utils/supabase/server';
 
 export interface MemoryTurn {
   prompt: string;
@@ -13,58 +7,44 @@ export interface MemoryTurn {
   timestamp: number;
 }
 
-interface SessionLogEntry {
-  session_id: string;
-  timestamp: number;
-  prompt: string;
-  response: string;
-}
-
-const SESSION_LOG = path.join(process.cwd(), 'data', 'session_log.jsonl');
-
-/////////////////////////
-// Single‑thread fetch //
-/////////////////////////
-
+// single‑thread fetch
 export async function getMemoryForSession(
   sessionId: string,
   limit = 10
 ): Promise<MemoryTurn[]> {
-  try {
-    const data = await fs.readFile(SESSION_LOG, 'utf-8');
-    return data
-      .split('\n')
-      .filter(Boolean)
-      .map(line => JSON.parse(line) as SessionLogEntry)
-      .filter(entry => entry.session_id === sessionId)
-      .slice(-limit)
-      .map(entry => ({
-        prompt: entry.prompt,
-        response: entry.response,
-        timestamp: entry.timestamp
-      }));
-  } catch {
+  const { data, error } = await supabaseAdmin
+    .from('chat_logs')
+    .select('content,created_at,role')
+    .eq('thread_id', sessionId)
+    .order('created_at', { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    console.error('❌ supabase getMemoryForSession error:', error);
     return [];
   }
+  // transform into MemoryTurn pairs (user then assistant)
+  const turns: MemoryTurn[] = [];
+  for (const row of data) {
+    if (row.role === 'user') {
+      turns.push({ prompt: row.content, response: '', timestamp: row.created_at });
+    } else {
+      const last = turns[turns.length - 1];
+      if (last) last.response = row.content;
+    }
+  }
+  return turns;
 }
 
-///////////////////////////
-// Multi‑thread fetcher  //
-///////////////////////////
-
-/**
- * Fetch and merge memory from multiple threadIds.
- */
+// multi‑thread fetch
 export async function getMemoryForThreads(
   threadIds: string[],
   limitPerThread = 5
 ): Promise<MemoryTurn[]> {
-  const allMemory: MemoryTurn[] = [];
+  let all: MemoryTurn[] = [];
   for (const id of threadIds) {
     const mem = await getMemoryForSession(id, limitPerThread);
-    allMemory.push(...mem);
+    all = all.concat(mem);
   }
-  // sort by timestamp so that oldest entries come first
-  allMemory.sort((a, b) => a.timestamp - b.timestamp);
-  return allMemory;
+  return all.sort((a, b) => a.timestamp - b.timestamp);
 }

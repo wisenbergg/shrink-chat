@@ -3,6 +3,7 @@
 import OpenAI from 'openai';
 import { logSessionEntry } from './logSession';
 import { getMemoryForSession, getMemoryForThreads, MemoryTurn } from './sessionMemory';
+import { fetchRecall } from './fetchRecall';
 
 export interface PromptInput {
   sessionId?: string;
@@ -29,10 +30,44 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
     "don't be overly inquisitive; relax and hold space. When the user begins to open up about their feelings is the moment to dig deeper...";
+  
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt }
   ];
 
+  // Fetch recall material
+  let recallUsed = false;
+  let retrievedChunks: Array<{
+    discipline: string;
+    topic: string;
+    source: string;
+    content: string;
+    score: number;
+  }> = [];
+
+  try {
+    const recallResult = await fetchRecall(prompt);
+    recallUsed = recallResult.recallUsed;
+    retrievedChunks = recallResult.results;
+  } catch (err) {
+    console.warn('⚠️ Recall fetch failed, continuing without recall.', err);
+  }
+
+  if (recallUsed && retrievedChunks.length) {
+    const contextBlock = retrievedChunks
+      .map(
+        (entry, i) =>
+          `${i + 1}. ${entry.discipline} – ${entry.topic} (${entry.source}): ${entry.content}`
+      )
+      .join("\n\n");
+
+    messages.unshift({
+      role: 'system',
+      content: `You are grounded in the following therapeutic references:\n\n${contextBlock}\n\nUse these materials, when relevant, to support the user with clarity and care — but stay emotionally attuned, not clinical.`
+    });
+  }
+
+  // Add thread/session memory
   if (threadIds && threadIds.length) {
     const memory: MemoryTurn[] = await getMemoryForThreads(threadIds, 5);
     for (const turn of memory) {
@@ -59,6 +94,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     temperature: Number(process.env.TEMPERATURE) || 0.7,
     max_tokens: Number(process.env.MAX_TOKENS) || 2048
   });
+
   const response = completion.choices[0].message?.content?.trim() ?? '';
 
   // Log session entry without sending timestamp so DB default applies
@@ -68,12 +104,12 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     response,
     model: completion.model,
     signal: 'none',
-    recallUsed: Boolean(sessionId || (threadIds && threadIds.length > 0))
+    recallUsed
   });
 
   return {
     response_text: response,
-    recallUsed: Boolean(sessionId || (threadIds && threadIds.length > 0)),
+    recallUsed,
     tone_tags: [],
     signal: 'none',
     model: completion.model

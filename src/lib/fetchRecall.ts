@@ -5,14 +5,15 @@ import path from 'path';
 import OpenAI from 'openai';
 
 export interface RecallEntry {
-  prompt: string;
-  response_text: string;
+  discipline: string;
+  topic: string;
+  source: string;
+  content: string;
   embedding: number[];
 }
 
-// 1) Only load the fully embedded JSON
 const CORPUS_FILES = [
-  path.join(process.cwd(), 'data', 'shrink_corpus_full_embedded_cleaned.json'),
+  path.join(process.cwd(), 'data', 'therapy_corpus_embedded.json'),
 ];
 
 let corpusCache: RecallEntry[] | null = null;
@@ -44,14 +45,20 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return magA && magB ? dot / (Math.sqrt(magA) * Math.sqrt(magB)) : 0;
 }
 
-export async function fetchRecall(
-  prompt: string
-): Promise<{ response_text: string; recallUsed: boolean }> {
+export async function fetchRecall(prompt: string): Promise<{
+  recallUsed: boolean;
+  results: Array<{
+    discipline: string;
+    topic: string;
+    source: string;
+    content: string;
+    score: number;
+  }>;
+}> {
   if (typeof prompt !== 'string' || !prompt.trim()) {
-    return { response_text: '', recallUsed: false };
+    return { recallUsed: false, results: [] };
   }
 
-  // 2) Embed the prompt
   let inputEmbedding: number[];
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -62,35 +69,40 @@ export async function fetchRecall(
     inputEmbedding = res.data[0].embedding;
   } catch (err) {
     console.error('fetchRecall embedding error:', err);
-    return { response_text: '', recallUsed: false };
+    return { recallUsed: false, results: [] };
   }
 
-  // 3) Load corpus and find best match
   const corpus = loadCorpus();
   if (corpus.length === 0) {
     console.warn('⚠️  Corpus is empty – no embeddings loaded.');
+    return { recallUsed: false, results: [] };
   }
 
-  let bestScore = -Infinity;
-  let bestEntry: RecallEntry | null = null;
+  // Compute similarity scores
+  const scoredEntries = corpus.map(entry => ({
+    ...entry,
+    score: cosineSimilarity(inputEmbedding, entry.embedding)
+  }));
 
-  for (const entry of corpus) {
-    const score = cosineSimilarity(inputEmbedding, entry.embedding);
-    if (score > bestScore) {
-      bestScore = score;
-      bestEntry = entry;
-    }
-  }
+  // Sort by score descending
+  scoredEntries.sort((a, b) => b.score - a.score);
 
-  // 4) Threshold logic
-  const thresholdEnv = Number(process.env.RECALL_THRESHOLD);
-  if (isNaN(thresholdEnv)) {
-    throw new Error(`Invalid RECALL_THRESHOLD: ${process.env.RECALL_THRESHOLD}`);
-  }
-  const threshold = thresholdEnv;
+  // Select top N (e.g., top 3)
+  const topN = Number(process.env.RECALL_TOP_N) || 3;
+  const threshold = Number(process.env.RECALL_THRESHOLD) || 0.8;
+  const topResults = scoredEntries
+    .filter(e => e.score >= threshold)
+    .slice(0, topN)
+    .map(e => ({
+      discipline: e.discipline,
+      topic: e.topic,
+      source: e.source,
+      content: e.content,
+      score: e.score
+    }));
 
-  if (bestEntry && bestScore >= threshold) {
-    return { response_text: bestEntry.response_text, recallUsed: true };
-  }
-  return { response_text: '', recallUsed: false };
+  return {
+    recallUsed: topResults.length > 0,
+    results: topResults
+  };
 }
