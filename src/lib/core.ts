@@ -4,6 +4,8 @@ import OpenAI from 'openai';
 import { logSessionEntry } from './logSession';
 import { getMemoryForSession, getMemoryForThreads, MemoryTurn } from './sessionMemory';
 import { fetchRecall } from './fetchRecall';
+import { predictSignal } from './predictSignal';
+import { inferToneTagsFromText } from './toneInference';
 
 export interface PromptInput {
   sessionId?: string;
@@ -27,10 +29,19 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
 
   if (!prompt.trim()) throw new Error('Missing prompt');
 
+  // Predict signal
+  let predictedSignal = 'unknown';
+  try {
+    predictedSignal = await predictSignal(prompt);
+    console.log(`🔍 Predicted signal: ${predictedSignal}`);
+  } catch (err) {
+    console.warn('⚠️ Signal prediction failed, falling back to unknown.', err);
+  }
+
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
     "Be sure to hold space. but when the user asks you for advice or begins to open up about their feelings, struggles, or problems you are permitted to dig deeper and use your knowledge to guide them...";
-  
+
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt }
   ];
@@ -97,21 +108,30 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
 
   const response = completion.choices[0].message?.content?.trim() ?? '';
 
+  // Infer tone tags from response
+  let inferredToneTags: string[] = [];
+  try {
+    inferredToneTags = await inferToneTagsFromText(response);
+    console.log(`🎨 Inferred tone tags: ${inferredToneTags.join(', ')}`);
+  } catch (err) {
+    console.warn('⚠️ Tone inference failed, falling back to empty.', err);
+  }
+
   // Log session entry without sending timestamp so DB default applies
   await logSessionEntry({
     session_id: sessionId ?? threadIds?.[0] ?? 'anonymous',
     prompt,
     response,
     model: completion.model,
-    signal: 'none',
+    signal: predictedSignal,
     recallUsed
   });
 
   return {
     response_text: response,
     recallUsed,
-    tone_tags: [],
-    signal: 'none',
+    tone_tags: inferredToneTags,
+    signal: predictedSignal,
     model: completion.model
   };
 }

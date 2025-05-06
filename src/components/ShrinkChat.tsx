@@ -1,17 +1,14 @@
-// src/components/ShrinkChat.tsx
-
 "use client";
 
-import { useState, useRef, useEffect, ChangeEvent, KeyboardEvent } from "react";
+import { useState, useRef, useEffect } from "react";
 import { v4 as uuid } from "uuid";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { FeedbackForm } from './FeedbackForm';
+import { FeedbackForm } from "../components/FeedbackForm";
 
 interface Message {
   sender: "user" | "engine";
   text: string;
-  responseId?: string; // added to link feedback
 }
 
 export default function ShrinkChat() {
@@ -25,8 +22,7 @@ export default function ShrinkChat() {
     const prompt = input.trim();
     if (!prompt) return;
 
-    const userMessage: Message = { sender: "user", text: prompt };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, { sender: "user", text: prompt }]);
     setInput("");
     setIsLoading(true);
 
@@ -37,19 +33,27 @@ export default function ShrinkChat() {
         body: JSON.stringify({ prompt, threadId }),
       });
       const data = await res.json();
-      const engineMessage: Message = {
-        sender: "engine",
-        text: data.response_text,
-        responseId: `response-${Date.now()}`,
-      };
-      setMessages((prev) => [...prev, engineMessage]);
+      setMessages((prev) => [...prev, { sender: "engine", text: data.response_text }]);
     } catch (err) {
-      console.error("Error sending prompt:", err);
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Seed opening message on first load
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          sender: "engine",
+          text: "Whenever you’re ready, I’m here. What’s on your mind today?",
+        },
+      ]);
+    }
+  }, []);
+
+  // Auto-scroll on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -61,10 +65,13 @@ export default function ShrinkChat() {
       <Card className="flex-1 flex overflow-hidden">
         <CardContent ref={scrollRef} className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto">
           {messages.map((msg, idx) => (
-            <div key={idx} className={`p-3 rounded-xl ${msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"}`}>
-              <p>{msg.text}</p>
-              {msg.sender === "engine" && msg.responseId && (
-                <FeedbackForm sessionId={threadId} responseId={msg.responseId} />
+            <div
+              key={idx}
+              className={`p-3 rounded-xl ${msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"}`}
+            >
+              {msg.text}
+              {msg.sender === "engine" && (
+                <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
               )}
             </div>
           ))}
@@ -77,8 +84,8 @@ export default function ShrinkChat() {
           className="flex-1 resize-none border rounded p-2"
           placeholder="Type something…"
           value={input}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setInput(e.target.value)}
-          onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               handleSubmit();

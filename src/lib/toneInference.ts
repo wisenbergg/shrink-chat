@@ -1,25 +1,16 @@
-// toneInference.ts
-// import * as fs from 'fs'; // Removed duplicate import
 import * as path from 'path';
 import * as fs from 'fs';
+import OpenAI from 'openai';
 
 export interface ToneInferenceEntry {
   embedding: number[];
   tone_tags: string[];
 }
 
-// 1. Point to the correct corpus file (ensure this JSON includes tone_tags)
 const TONE_CORPUS_PATH = path.join(
   process.cwd(),
-
-// Removed duplicate declaration of toneCorpus
-// Removed duplicate implementation of loadToneCorpus
-
-// Removed duplicate implementation of cosineSimilarity
-
-// Removed duplicate implementation of inferToneFromEmbedding
-'data',
-'shrink_corpus_with_tone_tags.json'
+  'data',
+  'shrink_corpus_with_tone_tags.json'
 );
 
 let toneCorpus: ToneInferenceEntry[] | null = null;
@@ -47,25 +38,35 @@ function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 /**
- * Find the nearest‐neighbor entry by embedding, return its tone_tags.
- * Returns [] if no corpus or no entries.
+ * Embeds the input text, finds nearest neighbor, returns tone tags.
  */
-export async function inferToneFromEmbedding(
-  inputEmbedding: number[]
-): Promise<string[]> {
-  const entries = loadToneCorpus();
-  if (entries.length === 0) return [];
+export async function inferToneTagsFromText(text: string): Promise<string[]> {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-  let bestScore = -Infinity;
-  let bestTags: string[] = [];
+  try {
+    const embeddingResponse = await openai.embeddings.create({
+      model: process.env.EMBEDDING_MODEL!,
+      input: text
+    });
 
-  for (const entry of entries) {
-    const score = cosineSimilarity(inputEmbedding, entry.embedding);
-    if (score > bestScore) {
-      bestScore = score;
-      bestTags = entry.tone_tags;
+    const inputEmbedding = embeddingResponse.data[0].embedding;
+    const entries = loadToneCorpus();
+    if (entries.length === 0) return [];
+
+    let bestScore = -Infinity;
+    let bestTags: string[] = [];
+
+    for (const entry of entries) {
+      const score = cosineSimilarity(inputEmbedding, entry.embedding);
+      if (score > bestScore) {
+        bestScore = score;
+        bestTags = entry.tone_tags;
+      }
     }
-  }
 
-  return bestTags;
+    return bestTags;
+  } catch (e) {
+    console.error('⚠️ Failed to generate embedding or infer tone:', e);
+    return [];
+  }
 }
