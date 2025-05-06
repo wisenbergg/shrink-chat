@@ -40,7 +40,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
 
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
-    "Be sure to hold space. but when the user asks you for advice or begins to open up about their feelings, struggles, or problems you are permitted to dig deeper and use your knowledge to guide them...";
+    "Be sure to hold space for the user. When the user asks you for advice, share your advice but do not overwhelm them. Be concise with the information you provide, then follow up with a thoughtful question. When they are ready to share their feelings, struggles, or problems you are permitted to launch into a more direct line of questioning. Use your knowledge to guide them to gracefully face their own truths.";
 
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt }
