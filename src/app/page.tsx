@@ -1,8 +1,7 @@
 "use client";
-
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import ShrinkChat from "../components/ShrinkChat";
 
 export default function Page() {
@@ -22,10 +21,10 @@ export default function Page() {
 
   return (
     <>
-      <div style={{ textAlign: "center", margin: "2rem 0" }}>
-        <Image src="/logo.svg" alt="Logo" width={120} height={120} />
-      </div>
-      <ShrinkChat />
+      <div style={{ position: "absolute", top: "0", left: "0", margin: "1rem" }}>
+        <Image src="/logo.svg" alt="Logo" width={32} height={32} />
+        </div>
+        <ShrinkChat />
     </>
   );
 }

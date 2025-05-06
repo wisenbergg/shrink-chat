@@ -23,9 +23,9 @@ export default function LoginPage() {
 
   return (
     <div>
-      <div style={{ textAlign: "center", margin: "2rem 0" }}>
-        <Image src="/logo.png" alt="Logo" width={120} height={120} />
-        </div>
+    <div style={{ position: "absolute", top: "0", left: "0", margin: "1rem" }}>
+      <Image src="/logo.svg" alt="Logo" width={32} height={32} />
+    </div>
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md">
         <h1 className="text-2xl mb-4 font-bold">Enter Password</h1>
