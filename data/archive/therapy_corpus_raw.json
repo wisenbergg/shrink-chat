@@ -1,0 +1,82 @@
+[
+  {
+    "discipline": "CBT",
+    "topic": "cognitive distortions",
+    "source": "Feeling Good: The New Mood Therapy",
+    "prompt": "I always mess everything up. I can never get things right.",
+    "response_text": "That sounds like all-or-nothing thinking. Let's explore where you have succeeded or made progress, even if it wasn't perfect.",
+    "embedding": []
+  },
+  {
+    "discipline": "CBT",
+    "topic": "thought records",
+    "source": "Feeling Good: The New Mood Therapy",
+    "prompt": "I'm sure my friends are upset with me because they haven't texted back.",
+    "response_text": "Let’s use a thought record to examine the evidence for and against that belief, and see if there’s another explanation.",
+    "embedding": []
+  },
+  {
+    "discipline": "Inner Child Work",
+    "topic": "reparenting exercises",
+    "source": "Homecoming",
+    "prompt": "I feel like no one ever protected me when I was little.",
+    "response_text": "Would you be willing to write a gentle letter to your younger self, offering the protection and care you needed back then?",
+    "embedding": []
+  },
+  {
+    "discipline": "Inner Child Work",
+    "topic": "guided visualization",
+    "source": "Homecoming",
+    "prompt": "I keep seeing this memory from when I was a kid, and it makes me sad.",
+    "response_text": "Let’s try a guided visualization to help you meet that younger version of yourself with kindness and reassurance.",
+    "embedding": []
+  },
+  {
+    "discipline": "Trauma-Informed Care",
+    "topic": "body awareness",
+    "source": "The Body Keeps the Score",
+    "prompt": "Sometimes I feel completely disconnected from my body, like I’m floating.",
+    "response_text": "Let’s gently bring awareness back to your body — maybe noticing your feet on the ground or the rhythm of your breath.",
+    "embedding": []
+  },
+  {
+    "discipline": "Trauma-Informed Care",
+    "topic": "grounding techniques",
+    "source": "The Body Keeps the Score",
+    "prompt": "I just had a flashback, and I don’t know how to calm down.",
+    "response_text": "Let’s focus on the present: can you name five things you can see, four things you can touch, and three things you can hear right now?",
+    "embedding": []
+  },
+  {
+    "discipline": "DBT",
+    "topic": "distress tolerance",
+    "source": "Cognitive-Behavioral Treatment of Borderline Personality Disorder",
+    "prompt": "I feel like I’m going to explode from how angry I am.",
+    "response_text": "Would you like to try a distress tolerance skill, like holding ice or splashing cold water, to help ride out the emotion safely?",
+    "embedding": []
+  },
+  {
+    "discipline": "DBT",
+    "topic": "emotion regulation",
+    "source": "Cognitive-Behavioral Treatment of Borderline Personality Disorder",
+    "prompt": "I can’t control my emotions; they just overwhelm me.",
+    "response_text": "Let’s explore which emotion regulation skills might help you reduce your vulnerability and strengthen your emotional resilience.",
+    "embedding": []
+  },
+  {
+    "discipline": "MBSR",
+    "topic": "mindfulness meditation",
+    "source": "Wherever You Go, There You Are",
+    "prompt": "My mind won’t stop racing, and I feel restless all the time.",
+    "response_text": "Let’s try a brief mindfulness practice — can you gently notice your thoughts without judgment, and return attention to your breath?",
+    "embedding": []
+  },
+  {
+    "discipline": "MBSR",
+    "topic": "body scan",
+    "source": "Wherever You Go, There You Are",
+    "prompt": "I have so much tension in my body, but I’m not sure why.",
+    "response_text": "Would you like to do a body scan together — slowly bringing awareness to each area of your body and noticing sensations?",
+    "embedding": []
+  }
+]
