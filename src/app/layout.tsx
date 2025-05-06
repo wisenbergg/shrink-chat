@@ -27,9 +27,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Speed Insights script injected for all pages */}
-        <SpeedInsights />
-      </head>
+  {/* Speed Insights script injected for all pages */}
+  <SpeedInsights />
+  
+  <link rel="icon" href="/favicon.ico" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+  <meta name="apple-mobile-web-app-title" content="whenIwas" />
+  <meta name="application-name" content="whenIwas" />
+  <meta name="msapplication-TileColor" content="#ffffff" />
+  <meta name="theme-color" content="#ffffff" />
+</head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

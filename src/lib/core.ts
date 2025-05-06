@@ -29,7 +29,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
 
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
-    "don't be overly inquisitive; relax and hold space. When the user begins to open up about their feelings is the moment to dig deeper...";
+    "Be sure to hold space but when the user begins to open up about their feelings or struggles you are permitted to dig deeper...";
   
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt }
@@ -63,7 +63,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
 
     messages.unshift({
       role: 'system',
-      content: `You are grounded in the following therapeutic references:\n\n${contextBlock}\n\nUse these materials, when relevant, to support the user with clarity and care — but stay emotionally attuned, not clinical.`
+      content: `You are grounded in the following therapeutic references:\n\n${contextBlock}\n\nUse these materials to support the user with clarity and care — stay emotionally attuned, not robotically clinical.`
     });
   }
 
