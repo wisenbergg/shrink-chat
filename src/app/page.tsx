@@ -23,7 +23,7 @@ export default function Page() {
   return (
     <>
       <div style={{ textAlign: "center", margin: "2rem 0" }}>
-        <Image src="/" alt="Logo" width={120} height={120} />
+        <Image src="/logo.svg" alt="Logo" width={120} height={120} />
       </div>
       <ShrinkChat />
     </>
