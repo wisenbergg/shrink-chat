@@ -68,22 +68,22 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     });
   }
 
-  // Add thread/session memory
+  // Add thread/session memory (now streaming full turns)
+  let memory: MemoryTurn[] = [];
   if (threadIds && threadIds.length) {
-    const memory: MemoryTurn[] = await getMemoryForThreads(threadIds, 5);
-    for (const turn of memory) {
-      messages.push({ role: 'user', content: turn.prompt });
-      messages.push({ role: 'assistant', content: turn.response });
-    }
+    memory = await getMemoryForThreads(threadIds, 5);
   } else if (sessionId) {
-    const memory = await getMemoryForSession(sessionId, 10);
-    for (const turn of memory) {
-      messages.push({ role: 'user', content: turn.prompt });
-      messages.push({ role: 'assistant', content: turn.response });
-    }
+    memory = await getMemoryForSession(sessionId, 10);
   }
 
-  for (const h of history) messages.push({ role: h.role, content: h.content });
+  for (const turn of memory) {
+    messages.push({ role: turn.role, content: turn.content });
+  }
+
+  for (const h of history) {
+    messages.push({ role: h.role, content: h.content });
+  }
+
   messages.push({ role: 'user', content: prompt });
 
   const useMicro = history.length === 0 && (!threadIds || threadIds.length === 0) && !sessionId;
@@ -93,6 +93,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     model: modelToUse,
     messages,
     temperature: Number(process.env.TEMPERATURE) || 1.35,
+    top_p: Number(process.env.TOP_P) || 1.0,
     max_tokens: Number(process.env.MAX_TOKENS) || 2048
   });
 
@@ -113,7 +114,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     prompt,
     response,
     model: completion.model,
-    signal: 'none', // hardcoded fallback since signal classifier is disabled
+    signal: 'none', // signal classifier disabled for now
     recallUsed
   });
 
@@ -121,7 +122,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     response_text: response,
     recallUsed,
     tone_tags: inferredToneTags,
-    signal: 'none', // hardcoded fallback
+    signal: 'none',
     model: completion.model
   };
 }
