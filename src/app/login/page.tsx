@@ -24,7 +24,7 @@ export default function LoginPage() {
   return (
     <div>
     <div style={{ position: "absolute", top: "0", left: "0", margin: "1rem" }}>
-      <Image src="/logo.svg" alt="Logo" width={32} height={32} />
+      <Image src="/logo.svg" alt="Logo" width={64} height={64} />
     </div>
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md">

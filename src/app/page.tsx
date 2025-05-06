@@ -22,7 +22,7 @@ export default function Page() {
   return (
     <>
       <div style={{ position: "absolute", top: "0", left: "0", margin: "1rem" }}>
-        <Image src="/logo.svg" alt="Logo" width={32} height={32} />
+        <Image src="/logo.svg" alt="Logo" width={64} height={64} />
         </div>
         <ShrinkChat />
     </>
