@@ -17,27 +17,30 @@ export function FeedbackForm({ sessionId, responseId }: { sessionId: string; res
     }
   }
 
-  if (submitted) return <span className="text-xs text-green-600">Thanks!</span>;
-
   return (
-    <>
-      <div className="flex gap-2">
-        <button
-          onClick={() => submitFeedback('thumbs_up')}
-          className="hover:text-green-500 transition-colors"
-          aria-label="Thumbs up"
-        >
-          👍
-        </button>
-        <div className="flex gap-2"></div>
-        <button
-          onClick={() => submitFeedback('thumbs_down')}
-          className="hover:text-red-500 transition-colors"
-          aria-label="Thumbs down"
-        >
-          👎
-        </button>
-      </div>
-    </>
+    <div className="relative">
+      {submitted ? (
+        <span className="absolute top-2 right-2 text-xs text-green-600 opacity-70">
+          Thanks!
+        </span>
+      ) : (
+        <div className="absolute top-2 right-2 flex gap-1 text-gray-400 text-sm opacity-50 hover:opacity-80 transition-opacity">
+          <button
+            onClick={() => submitFeedback('thumbs_up')}
+            className="hover:text-green-400 transition-colors"
+            aria-label="Thumbs up"
+          >
+            👍
+          </button>
+          <button
+            onClick={() => submitFeedback('thumbs_down')}
+            className="hover:text-red-400 transition-colors"
+            aria-label="Thumbs down"
+          >
+            👎
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

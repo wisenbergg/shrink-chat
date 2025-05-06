@@ -67,7 +67,9 @@ export default function ShrinkChat() {
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`p-3 rounded-xl ${msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"}`}
+              className={`relative p-3 rounded-xl ${
+                msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"
+              }`}
             >
               {msg.text}
               {msg.sender === "engine" && (
