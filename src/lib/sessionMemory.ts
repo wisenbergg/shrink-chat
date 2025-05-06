@@ -1,4 +1,3 @@
-// src/lib/sessionMemory.ts
 import { supabaseAdmin } from '@/utils/supabase/server';
 
 export interface MemoryTurn {
@@ -6,17 +5,11 @@ export interface MemoryTurn {
   content: string;
   timestamp: number;
 }
-export async function getMemoryForThreads(
-  threadIds: string[],
-  limitPerThread = 5
-): Promise<MemoryTurn[]> {
-  let all: MemoryTurn[] = [];
-  for (const id of threadIds) {
-    const mem = await getMemoryForSession(id, limitPerThread);
-    all = all.concat(mem);
-  }
-  // Sort everything chronologically across threads
-  return all.sort((a, b) => a.timestamp - b.timestamp);
+
+interface ChatLogRow {
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: number;
 }
 
 export async function getMemoryForSession(
@@ -37,11 +30,24 @@ export async function getMemoryForSession(
 
   console.log(`🔍 Fetching memory for sessionId=${sessionId}, got ${data?.length || 0} rows`);
 
-  const turns: MemoryTurn[] = data.map((row: any) => ({
+  const turns: MemoryTurn[] = (data as ChatLogRow[]).map(row => ({
     role: row.role,
     content: row.content,
     timestamp: row.created_at
   }));
 
   return turns;
+}
+
+export async function getMemoryForThreads(
+  threadIds: string[],
+  limitPerThread = 5
+): Promise<MemoryTurn[]> {
+  let all: MemoryTurn[] = [];
+  for (const id of threadIds) {
+    const mem = await getMemoryForSession(id, limitPerThread);
+    all = all.concat(mem);
+  }
+  // Sort everything chronologically across threads
+  return all.sort((a, b) => a.timestamp - b.timestamp);
 }
