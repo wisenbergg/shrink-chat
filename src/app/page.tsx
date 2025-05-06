@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import ShrinkChat from "../components/ShrinkChat";
 
 export default function Page() {
@@ -19,5 +20,12 @@ export default function Page() {
 
   if (!isAuth) return null; // can replace with a loading spinner if you like
 
-  return <ShrinkChat />;
+  return (
+    <>
+      <div style={{ textAlign: "center", margin: "2rem 0" }}>
+        <Image src="/" alt="Logo" width={120} height={120} />
+      </div>
+      <ShrinkChat />
+    </>
+  );
 }

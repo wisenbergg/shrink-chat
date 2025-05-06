@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +22,10 @@ export default function LoginPage() {
   };
 
   return (
+    <div>
+      <div style={{ textAlign: "center", margin: "2rem 0" }}>
+        <Image src="/logo.png" alt="Logo" width={120} height={120} />
+        </div>
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md">
         <h1 className="text-2xl mb-4 font-bold">Enter Password</h1>
@@ -39,6 +44,7 @@ export default function LoginPage() {
           Enter
         </button>
       </form>
+    </div>
     </div>
   );
 }
