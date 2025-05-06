@@ -4,7 +4,6 @@ import OpenAI from 'openai';
 import { logSessionEntry } from './logSession';
 import { getMemoryForSession, getMemoryForThreads, MemoryTurn } from './sessionMemory';
 import { fetchRecall } from './fetchRecall';
-import { predictSignal } from './predictSignal';
 import { inferToneTagsFromText } from './toneInference';
 
 export interface PromptInput {
@@ -28,15 +27,6 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   const { sessionId, threadIds, prompt, history = [] } = input;
 
   if (!prompt.trim()) throw new Error('Missing prompt');
-
-  // Predict signal
-  let predictedSignal = 'unknown';
-  try {
-    predictedSignal = await predictSignal(prompt);
-    console.log(`🔍 Predicted signal: ${predictedSignal}`);
-  } catch (err) {
-    console.warn('⚠️ Signal prediction failed, falling back to unknown.', err);
-  }
 
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
@@ -123,7 +113,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     prompt,
     response,
     model: completion.model,
-    signal: predictedSignal,
+    signal: 'none', // hardcoded fallback since signal classifier is disabled
     recallUsed
   });
 
@@ -131,7 +121,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     response_text: response,
     recallUsed,
     tone_tags: inferredToneTags,
-    signal: predictedSignal,
+    signal: 'none', // hardcoded fallback
     model: completion.model
   };
 }
