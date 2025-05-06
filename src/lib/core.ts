@@ -92,8 +92,8 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   const completion = await openai.chat.completions.create({
     model: modelToUse,
     messages,
-    temperature: Number(process.env.TEMPERATURE) || 1.35,
-    top_p: Number(process.env.TOP_P) || 1.0,
+    temperature: Number(process.env.TEMPERATURE) || 1.00,
+    top_p: Number(process.env.TOP_P) || 0.5,
     max_tokens: Number(process.env.MAX_TOKENS) || 2048
   });
 
