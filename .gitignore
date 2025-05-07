@@ -27,6 +27,8 @@
 # ignore local SQLite chat DB
 shrink_chat.db
 
+# Ignore future test scripts
+src/lib/testFetchRecall.*
 
 # ignore local session logs
 # NOTE: this is a temporary solution until we have a better way to handle session logs

@@ -11,13 +11,11 @@ export interface RecallEntry {
   source: string;
   content: string;
   embedding: number[];
-  signal_label?: 'low' | 'medium' | 'high';
-  tone_tags?: string[];
+  signal_label: 'low' | 'medium' | 'high';
+  tone_tags: string[];
 }
 
-const CORPUS_FILES = [
-  path.join(process.cwd(), 'data', 'therapy_corpus_embedded_expanded.json'),
-];
+const CORPUS_FILES = [path.join(process.cwd(), 'data', 'therapy_corpus_embedded.json')];
 
 let corpusCache: RecallEntry[] | null = null;
 function loadCorpus(): RecallEntry[] {
@@ -62,7 +60,7 @@ export async function fetchRecall(
     score: number;
   }>;
 }> {
-  if (typeof prompt !== 'string' || !prompt.trim()) {
+  if (!prompt.trim()) {
     console.warn('[RAG DEBUG] Empty or invalid prompt');
     return { recallUsed: false, results: [] };
   }
@@ -72,7 +70,7 @@ export async function fetchRecall(
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const res = await openai.embeddings.create({
       model: process.env.EMBED_MODEL || 'text-embedding-3-small',
-      input: prompt
+      input: prompt,
     });
     inputEmbedding = res.data[0].embedding;
     console.log('[RAG DEBUG] Input embedding generated, length:', inputEmbedding.length);
@@ -89,35 +87,13 @@ export async function fetchRecall(
 
   console.log('[RAG DEBUG] Calculating similarity scores...');
   const scoredEntries = corpus.map(entry => ({
-    thread_id: entry.thread_id || '',
-    response_text: entry.response_text || '',
-    discipline: entry.discipline || '',
-    topic: entry.topic || '',
-    source: entry.source || '',
-    content: entry.content || '',
-    embedding: entry.embedding,
-    signal_label: entry.signal_label ?? 'medium', // default to 'medium'
-    tone_tags: entry.tone_tags ?? [],
-    score: cosineSimilarity(inputEmbedding, entry.embedding)
+    ...entry,
+    score: cosineSimilarity(inputEmbedding, entry.embedding),
   }));
 
   scoredEntries.sort((a, b) => b.score - a.score);
 
-  const filteredRanked = filterAndRankRAG(
-    scoredEntries,
-    predictedSignal,
-    inferredToneTags
-  );
-
-  if (filteredRanked.length > 0) {
-    console.log('[RAG DEBUG] Top result after filtering:', {
-      topic: filteredRanked[0].topic,
-      discipline: filteredRanked[0].discipline,
-      score: filteredRanked[0].score
-    });
-  } else {
-    console.warn('[RAG DEBUG] No entries passed signal + tone filtering.');
-  }
+  const filteredRanked = filterAndRankRAG(scoredEntries, predictedSignal, inferredToneTags);
 
   const topN = Number(process.env.RECALL_TOP_N) || 3;
   const topResults = filteredRanked.slice(0, topN).map(e => ({
@@ -125,7 +101,7 @@ export async function fetchRecall(
     topic: e.topic || '',
     source: e.source || '',
     content: e.content || '',
-    score: e.score || 0
+    score: e.score ?? 0,
   }));
 
   console.log(`[RAG DEBUG] Top results after filtering and slice (${topN}):`, topResults.length);
@@ -135,6 +111,6 @@ export async function fetchRecall(
 
   return {
     recallUsed: topResults.length > 0,
-    results: topResults
+    results: topResults,
   };
 }

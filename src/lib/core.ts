@@ -3,6 +3,7 @@ import { logSessionEntry } from './logSession';
 import { getMemoryForSession, getMemoryForThreads, MemoryTurn } from './sessionMemory';
 import { fetchRecall } from './fetchRecall';
 import { inferToneTagsFromText } from './toneInference';
+import { predictSignal } from './predictSignal';
 
 export interface PromptInput {
   sessionId?: string;
@@ -25,15 +26,18 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   const { sessionId, threadIds, prompt, history = [] } = input;
   if (!prompt.trim()) throw new Error('Missing prompt');
 
-  const systemPrompt = process.env.SYSTEM_PROMPT ?? "Your role is to be a compassionate, grounded, and effortlessly casual companion.";
+  const systemPrompt = process.env.SYSTEM_PROMPT ?? "Your role is to be a compassionate, grounded companion.";
 
   const messages: Array<{ role: string; content: string }> = [{ role: 'system', content: systemPrompt }];
 
   let recallUsed = false;
   let retrievedChunks: Array<{ discipline: string; topic: string; source: string; content: string; score: number }> = [];
 
+  const predictedSignal = await predictSignal(prompt);
+  const inferredToneTags = await inferToneTagsFromText(prompt);
+
   try {
-    const recallResult = await fetchRecall(prompt);
+    const recallResult = await fetchRecall(prompt, predictedSignal, inferredToneTags);
     recallUsed = recallResult.recallUsed;
     retrievedChunks = recallResult.results;
   } catch (err) {
@@ -49,7 +53,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   }
 
   let memory: MemoryTurn[] = [];
-  if (threadIds && threadIds.length) {
+  if (threadIds?.length) {
     memory = await getMemoryForThreads(threadIds, 5);
   } else if (sessionId) {
     memory = await getMemoryForSession(sessionId, 10);
@@ -71,25 +75,18 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   });
 
   let response = completion.choices[0].message?.content?.trim() ?? '';
-  let inferredToneTags: string[] = [];
-  try {
-    inferredToneTags = await inferToneTagsFromText(response);
-    console.log(`🎨 Inferred tone tags: ${inferredToneTags.join(', ')}`);
-  } catch (err) {
-    console.warn('⚠️ Tone inference failed.', err);
-  }
 
   const repetitionFallbacks = process.env.REPETITION_FALLBACKS?.split('|') || [];
   const withdrawalFallbacks = process.env.WITHDRAWAL_FALLBACKS?.split('|') || [];
   const crisisFallback = process.env.CRISIS_FALLBACK || '';
 
-  if (detectRepetition(history, response) && repetitionFallbacks.length) {
+  if (detectRepetition(history, response) && repetitionFallbacks.length > 0) {
     response += `\n\n${randomChoice(repetitionFallbacks)}`;
   }
-  if (detectWithdrawal(response) && withdrawalFallbacks.length) {
+  if (detectWithdrawal(response) && withdrawalFallbacks.length > 0) {
     response += `\n\n${randomChoice(withdrawalFallbacks)}`;
   }
-  if (detectCrisisSignals(response) && crisisFallback) {
+  if (detectCrisisSignals(response) && crisisFallback !== '') {
     response += `\n\n${crisisFallback}`;
   }
 
@@ -98,7 +95,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     prompt,
     response,
     model: completion.model,
-    signal: 'none',
+    signal: predictedSignal,
     recallUsed,
   });
 
@@ -106,7 +103,7 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
     response_text: response,
     recallUsed,
     tone_tags: inferredToneTags,
-    signal: 'none',
+    signal: predictedSignal,
     model: completion.model,
   };
 }
@@ -117,7 +114,7 @@ function randomChoice(arr: string[]): string {
 
 function detectRepetition(history: { content: string }[], response: string): boolean {
   const lastResponse = history[history.length - 1]?.content || '';
-  return lastResponse && response.includes(lastResponse);
+  return lastResponse !== '' && response.includes(lastResponse);
 }
 
 function detectWithdrawal(response: string): boolean {
