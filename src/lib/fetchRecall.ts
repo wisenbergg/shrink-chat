@@ -1,19 +1,22 @@
-// src/lib/fetchRecall.ts
-
+import { filterAndRankRAG } from './filterUtils';
 import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
 
 export interface RecallEntry {
+  thread_id: string;
+  response_text: string;
   discipline: string;
   topic: string;
   source: string;
   content: string;
   embedding: number[];
+  signal_label?: 'low' | 'medium' | 'high';
+  tone_tags?: string[];
 }
 
 const CORPUS_FILES = [
-  path.join(process.cwd(), 'data', 'therapy_corpus_embedded.json'),
+  path.join(process.cwd(), 'data', 'therapy_corpus_embedded_expanded.json'),
 ];
 
 let corpusCache: RecallEntry[] | null = null;
@@ -45,7 +48,11 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return magA && magB ? dot / (Math.sqrt(magA) * Math.sqrt(magB)) : 0;
 }
 
-export async function fetchRecall(prompt: string): Promise<{
+export async function fetchRecall(
+  prompt: string,
+  predictedSignal: 'low' | 'medium' | 'high' | 'ambiguous',
+  inferredToneTags: string[]
+): Promise<{
   recallUsed: boolean;
   results: Array<{
     discipline: string;
@@ -82,36 +89,46 @@ export async function fetchRecall(prompt: string): Promise<{
 
   console.log('[RAG DEBUG] Calculating similarity scores...');
   const scoredEntries = corpus.map(entry => ({
-    ...entry,
+    thread_id: entry.thread_id || '',
+    response_text: entry.response_text || '',
+    discipline: entry.discipline || '',
+    topic: entry.topic || '',
+    source: entry.source || '',
+    content: entry.content || '',
+    embedding: entry.embedding,
+    signal_label: entry.signal_label ?? 'medium', // default to 'medium'
+    tone_tags: entry.tone_tags ?? [],
     score: cosineSimilarity(inputEmbedding, entry.embedding)
   }));
 
   scoredEntries.sort((a, b) => b.score - a.score);
 
-  if (scoredEntries.length > 0) {
-    console.log('[RAG DEBUG] Top result:', {
-      topic: scoredEntries[0].topic,
-      discipline: scoredEntries[0].discipline,
-      score: scoredEntries[0].score
+  const filteredRanked = filterAndRankRAG(
+    scoredEntries,
+    predictedSignal,
+    inferredToneTags
+  );
+
+  if (filteredRanked.length > 0) {
+    console.log('[RAG DEBUG] Top result after filtering:', {
+      topic: filteredRanked[0].topic,
+      discipline: filteredRanked[0].discipline,
+      score: filteredRanked[0].score
     });
   } else {
-    console.warn('[RAG DEBUG] No entries scored — empty or failed comparison.');
+    console.warn('[RAG DEBUG] No entries passed signal + tone filtering.');
   }
 
   const topN = Number(process.env.RECALL_TOP_N) || 3;
-  const threshold = Number(process.env.RECALL_THRESHOLD) || 0.8;
-  const topResults = scoredEntries
-    .filter(e => e.score >= threshold)
-    .slice(0, topN)
-    .map(e => ({
-      discipline: e.discipline,
-      topic: e.topic,
-      source: e.source,
-      content: e.content,
-      score: e.score
-    }));
+  const topResults = filteredRanked.slice(0, topN).map(e => ({
+    discipline: e.discipline || '',
+    topic: e.topic || '',
+    source: e.source || '',
+    content: e.content || '',
+    score: e.score || 0
+  }));
 
-  console.log(`[RAG DEBUG] Top results after threshold (${threshold}):`, topResults.length);
+  console.log(`[RAG DEBUG] Top results after filtering and slice (${topN}):`, topResults.length);
   topResults.forEach((e, idx) => {
     console.log(`[RAG DEBUG] Passed ${idx + 1}: ${e.topic} (${e.discipline}) — Score: ${e.score}`);
   });

@@ -9,9 +9,9 @@
       "ES2020",
       "DOM"
     ],
-    "types": [
-      "node"
-    ],
+    "types": ["jest", "node"],
+
+    
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
