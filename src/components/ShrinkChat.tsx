@@ -51,7 +51,7 @@ export default function ShrinkChat() {
         },
       ]);
     }
-  }, []);
+  }, [messages.length]); // ✅ added dependency to fix React Hook warning
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -65,17 +65,17 @@ export default function ShrinkChat() {
       <Card className="flex-1 flex overflow-hidden">
         <CardContent ref={scrollRef} className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto">
           {messages.map((msg, idx) => (
-         <div
-         key={idx}
-         className={`relative group p-3 rounded-xl ${
-           msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"
-         }`}
-       >
-         {msg.text}
-         {msg.sender === "engine" && (
-           <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
-         )}
-       </div>
+            <div
+              key={idx}
+              className={`relative group p-3 rounded-xl ${
+                msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"
+              }`}
+            >
+              {msg.text}
+              {msg.sender === "engine" && (
+                <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
+              )}
+            </div>
           ))}
         </CardContent>
       </Card>
