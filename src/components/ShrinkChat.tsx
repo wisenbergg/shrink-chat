@@ -17,7 +17,8 @@ export default function ShrinkChat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<'intro1' | 'intro2' | 'intro3' | 'intro4' | 'invite' | 'done'>('intro1');
+  const [isTyping, setIsTyping] = useState(false);
 
   const silenceTimerRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -33,23 +34,42 @@ export default function ShrinkChat() {
   const scheduleSilenceHandler = useCallback(() => {
     clearSilenceTimer();
     silenceTimerRef.current = window.setTimeout(() => {
-      setMessages((prev) => [...prev, { sender: "engine", text: "I’m here whenever you’re ready to continue." }]);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "engine", text: "I’m here whenever you’re ready to continue." },
+      ]);
       setReminderSent(true);
       silenceTimerRef.current = null;
     }, 120_000);
   }, [clearSilenceTimer]);
 
+  // Onboarding flow controller
   useEffect(() => {
-    if (!onboardingComplete) {
-      setMessages([
-        { sender: "engine", text: "Before we begin, would you like to tell me your name — or stay anonymous? It’s totally up to you." },
-      ]);
-    } else {
-      setMessages((prev) =>
-        prev.length === 0 ? [{ sender: "engine", text: "Whenever you’re ready, I’m here. What’s on your mind today?" }] : prev
-      );
+    if (onboardingStep === 'intro1') {
+      showMessageWithDelay("Welcome. I’m really glad you’re here.", 'intro2');
     }
-  }, [onboardingComplete]);
+    if (onboardingStep === 'intro2') {
+      showMessageWithDelay("This is a space where you can share what’s on your mind, reflect, or just be — no pressure.", 'intro3');
+    }
+    if (onboardingStep === 'intro3') {
+      showMessageWithDelay("First, if you’re comfortable, I’d love to get to know you a little.", 'intro4');
+    }
+    if (onboardingStep === 'intro4') {
+      showMessageWithDelay("You’re always anonymous here — but sharing your name or how you’re feeling today can help me personalize your experience.", 'invite');
+    }
+    if (onboardingStep === 'invite') {
+      showMessageWithDelay("You can skip this anytime by typing “skip.”", 'done');
+    }
+  }, [onboardingStep]);
+
+  const showMessageWithDelay = (text: string, nextStep: string) => {
+    setIsTyping(true);
+    setTimeout(() => {
+      setMessages((prev) => [...prev, { sender: 'engine', text }]);
+      setOnboardingStep(nextStep as any);
+      setIsTyping(false);
+    }, 1500);
+  };
 
   useEffect(() => {
     const last = messages[messages.length - 1];
@@ -68,45 +88,32 @@ export default function ShrinkChat() {
 
     clearSilenceTimer();
     setReminderSent(false);
-    setMessages((prev) => [...prev, { sender: "user", text: prompt }]);
-    setInput("");
+    setMessages((prev) => [...prev, { sender: 'user', text: prompt }]);
+    setInput('');
     setIsLoading(true);
 
     try {
-      if (!onboardingComplete) {
-        let nextMessage = "";
-        if (prompt.toLowerCase().includes("anonymous")) {
-          await fetch("/api/onboarding", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ threadId }),
-          });
-          nextMessage = "Thanks. Is there anything you’d like me to know about how you’re feeling today?";
-        } else if (prompt.split(" ").length < 5) {
-          await fetch("/api/onboarding", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+      if (onboardingStep !== 'done') {
+        if (prompt.toLowerCase() === 'skip') {
+          setOnboardingStep('done');
+          setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
+        } else {
+          await fetch('/api/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ threadId, name: prompt }),
           });
-          nextMessage = "Thanks. Is there anything you’d like me to know about how you’re feeling today?";
-        } else {
-          await fetch("/api/onboarding", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ threadId, concerns: [prompt] }),
-          });
-          nextMessage = "Thank you. We can start wherever you like — you’re not alone here.";
-          setOnboardingComplete(true);
+          setOnboardingStep('done');
+          setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
         }
-        setMessages((prev) => [...prev, { sender: "engine", text: nextMessage }]);
       } else {
-        const res = await fetch("/api/shrink", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch('/api/shrink', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt, threadId }),
         });
         const data = await res.json();
-        setMessages((prev) => [...prev, { sender: "engine", text: data.response_text }]);
+        setMessages((prev) => [...prev, { sender: 'engine', text: data.response_text }]);
         if (!reminderSent) {
           scheduleSilenceHandler();
         }
@@ -147,6 +154,13 @@ export default function ShrinkChat() {
                 )}
               </div>
             ))}
+            {isTyping && (
+              <div className="typing-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
+              </div>
+            )}
           </div>
         </CardContent>
         <div className="flex gap-2 p-4 border-t border-border">
