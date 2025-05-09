@@ -136,8 +136,8 @@ export default function ShrinkChat() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-full w-full">
-      <Card className="flex-1 flex flex-col overflow-hidden">
+    <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen w-full">
+      <Card className="flex flex-col flex-1 overflow-hidden">
         <CardContent className="flex flex-col flex-1 p-0">
           <div
             ref={scrollRef}
