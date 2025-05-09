@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { v4 as uuid } from "uuid";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -13,7 +13,12 @@ interface Message {
 
 export default function ShrinkChat() {
   const [threadId] = useState(() => uuid());
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      sender: "engine",
+      text: "Whenever you’re ready, I’m here. What’s on your mind today?",
+    },
+  ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,15 +27,15 @@ export default function ShrinkChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Clear any existing silence timer
-  function clearSilenceTimer() {
+  const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
-  }
+  }, []);
 
   // Schedule the nudge after 30s of silence
-  function scheduleSilenceHandler() {
+  const scheduleSilenceHandler = useCallback(() => {
     clearSilenceTimer();
     silenceTimerRef.current = window.setTimeout(() => {
       setMessages((prev) => [
@@ -39,7 +44,7 @@ export default function ShrinkChat() {
       ]);
       silenceTimerRef.current = null;
     }, 30_000);
-  }
+  }, [clearSilenceTimer]);
 
   // When the engine replies, scroll and schedule the silence handler
   useEffect(() => {
@@ -51,12 +56,12 @@ export default function ShrinkChat() {
       }
       scheduleSilenceHandler();
     }
-  }, [messages]);
+  }, [messages, scheduleSilenceHandler]);
 
   // Clean up on unmount
   useEffect(() => {
     return () => clearSilenceTimer();
-  }, []);
+  }, [clearSilenceTimer]);
 
   const handleSubmit = async () => {
     const prompt = input.trim();
@@ -84,35 +89,28 @@ export default function ShrinkChat() {
     }
   };
 
-  // Seed opening message on first load
-  useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
-          sender: "engine",
-          text: "Whenever you’re ready, I’m here. What’s on your mind today?",
-        },
-      ]);
-    }
-  }, [messages.length]);
-
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen">
       <Card className="flex-1 flex overflow-hidden">
-        <CardContent ref={scrollRef} className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto">
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`relative group p-3 rounded-xl ${
-                msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"
-              }`}
-            >
-              {msg.text}
-              {msg.sender === "engine" && (
-                <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
-              )}
-            </div>
-          ))}
+        <CardContent className="p-0 flex-1 overflow-hidden">
+          <div
+            ref={scrollRef}
+            className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto"
+          >
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`relative group p-3 rounded-xl ${
+                  msg.sender === "user" ? "bg-blue-100" : "bg-gray-100"
+                }`}
+              >
+                {msg.text}
+                {msg.sender === "engine" && (
+                  <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
+                )}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -123,7 +121,7 @@ export default function ShrinkChat() {
           placeholder="Type something…"
           value={input}
           onChange={(e) => {
-            clearSilenceTimer();           // clear when they start typing
+            clearSilenceTimer();
             setInput(e.target.value);
           }}
           onKeyDown={(e) => {
