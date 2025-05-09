@@ -33,8 +33,8 @@ function ruptureDetector(userText: string): boolean {
   return cues.some(c => lower.includes(c));
 }
 
-export interface PromptInput { /* … */ }
-export interface PromptResult { /* … */ }
+export interface FirstEmptyInterface extends Record<string, unknown> {}
+export interface SecondEmptyInterface extends Record<string, unknown> {}
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
