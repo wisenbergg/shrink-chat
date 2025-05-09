@@ -38,7 +38,7 @@ export default function ShrinkChat() {
         { sender: "engine", text: "I’m here whenever you’re ready to continue." },
       ]);
       silenceTimerRef.current = null;
-    }, 30_000);
+    }, 120_000);
   }, [clearSilenceTimer]);
 
   useEffect(() => {
@@ -72,6 +72,8 @@ export default function ShrinkChat() {
       });
       const data = await res.json();
       setMessages((prev) => [...prev, { sender: "engine", text: data.response_text }]);
+      // Schedule silence handler after engine responds
+      scheduleSilenceHandler();
     } catch (err) {
       console.error(err);
     } finally {
