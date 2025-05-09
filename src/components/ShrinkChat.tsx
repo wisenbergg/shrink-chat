@@ -18,6 +18,7 @@ export default function ShrinkChat() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [reminderSent, setReminderSent] = useState(false);
 
   const silenceTimerRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,7 @@ export default function ShrinkChat() {
         ...prev,
         { sender: "engine", text: "I’m here whenever you’re ready to continue." },
       ]);
+      setReminderSent(true); // Mark reminder as sent
       silenceTimerRef.current = null;
     }, 120_000);
   }, [clearSilenceTimer]);
@@ -47,9 +49,8 @@ export default function ShrinkChat() {
       if (scrollRef.current) {
         scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
       }
-      scheduleSilenceHandler();
     }
-  }, [messages, scheduleSilenceHandler]);
+  }, [messages]);
 
   useEffect(() => {
     return () => clearSilenceTimer();
@@ -60,6 +61,7 @@ export default function ShrinkChat() {
     if (!prompt) return;
 
     clearSilenceTimer();
+    setReminderSent(false); // Reset reminder on user activity
     setMessages((prev) => [...prev, { sender: "user", text: prompt }]);
     setInput("");
     setIsLoading(true);
@@ -72,8 +74,10 @@ export default function ShrinkChat() {
       });
       const data = await res.json();
       setMessages((prev) => [...prev, { sender: "engine", text: data.response_text }]);
-      // Schedule silence handler after engine responds
-      scheduleSilenceHandler();
+      // Only schedule if reminder hasn't been sent
+      if (!reminderSent) {
+        scheduleSilenceHandler();
+      }
     } catch (err) {
       console.error(err);
     } finally {
