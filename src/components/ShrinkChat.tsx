@@ -11,13 +11,15 @@ interface Message {
   text: string;
 }
 
+type OnboardingStep = 'intro1' | 'intro2' | 'intro3' | 'intro4' | 'invite' | 'done';
+
 export default function ShrinkChat() {
   const [threadId] = useState(() => uuid());
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<'intro1' | 'intro2' | 'intro3' | 'intro4' | 'invite' | 'done'>('intro1');
+  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro1');
   const [isTyping, setIsTyping] = useState(false);
 
   const silenceTimerRef = useRef<number | null>(null);
@@ -43,7 +45,6 @@ export default function ShrinkChat() {
     }, 120_000);
   }, [clearSilenceTimer]);
 
-  // Onboarding flow controller
   useEffect(() => {
     if (onboardingStep === 'intro1') {
       showMessageWithDelay("Welcome. I’m really glad you’re here.", 'intro2');
@@ -62,11 +63,11 @@ export default function ShrinkChat() {
     }
   }, [onboardingStep]);
 
-  const showMessageWithDelay = (text: string, nextStep: string) => {
+  const showMessageWithDelay = (text: string, nextStep: OnboardingStep) => {
     setIsTyping(true);
     setTimeout(() => {
       setMessages((prev) => [...prev, { sender: 'engine', text }]);
-      setOnboardingStep(nextStep as any);
+      setOnboardingStep(nextStep);
       setIsTyping(false);
     }, 1500);
   };
