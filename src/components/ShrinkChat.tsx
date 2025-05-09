@@ -137,9 +137,13 @@ export default function ShrinkChat() {
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-full w-full">
-      <Card className="flex-1 flex flex-col bg-card rounded-xl shadow-lg">
-        <CardContent className="flex-1 overflow-hidden">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+      <Card className="flex-1 flex flex-col bg-card rounded-xl shadow-lg overflow-hidden">
+        <CardContent className="flex flex-col flex-1 p-0">
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto p-6 space-y-4"
+            style={{ wordBreak: 'break-word' }}
+          >
             {messages.map((msg, idx) => (
               <div
                 key={idx}
@@ -156,38 +160,38 @@ export default function ShrinkChat() {
               </div>
             ))}
             {isTyping && (
-              <div className="typing-indicator">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
+              <div className="flex items-center space-x-1">
+                <span className="dot w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></span>
+                <span className="dot w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-150"></span>
+                <span className="dot w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-300"></span>
               </div>
             )}
           </div>
+          <div className="flex gap-2 p-4 border-t border-border">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              className="flex-1 resize-none border rounded p-2 bg-input text-foreground overflow-hidden"
+              placeholder="Type something…"
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              style={{ minHeight: "2.5rem", maxHeight: "10rem" }}
+            />
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="bg-primary text-primary-foreground"
+            >
+              {isLoading ? "…" : "Send"}
+            </Button>
+          </div>
         </CardContent>
-        <div className="flex gap-2 p-4 border-t border-border">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            className="flex-1 resize-none border rounded p-2 bg-input text-foreground overflow-hidden"
-            placeholder="Type something…"
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-            style={{ minHeight: "2.5rem", maxHeight: "10rem" }}
-          />
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="bg-primary text-primary-foreground"
-          >
-            {isLoading ? "…" : "Send"}
-          </Button>
-        </div>
       </Card>
     </div>
   );
