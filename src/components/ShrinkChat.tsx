@@ -16,11 +16,54 @@ export default function ShrinkChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // ref to hold our silence‐timer id
+  const silenceTimerRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Clear any existing silence timer
+  function clearSilenceTimer() {
+    if (silenceTimerRef.current !== null) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }
+
+  // Schedule the nudge after 30s of silence
+  function scheduleSilenceHandler() {
+    clearSilenceTimer();
+    silenceTimerRef.current = window.setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        { sender: "engine", text: "I’m here whenever you’re ready to continue." },
+      ]);
+      silenceTimerRef.current = null;
+    }, 30_000);
+  }
+
+  // When the engine replies, scroll and schedule the silence handler
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.sender === "engine") {
+      // auto‑scroll
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      }
+      scheduleSilenceHandler();
+    }
+  }, [messages]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => clearSilenceTimer();
+  }, []);
 
   const handleSubmit = async () => {
     const prompt = input.trim();
     if (!prompt) return;
+
+    // user is active → clear nudge
+    clearSilenceTimer();
 
     setMessages((prev) => [...prev, { sender: "user", text: prompt }]);
     setInput("");
@@ -51,14 +94,7 @@ export default function ShrinkChat() {
         },
       ]);
     }
-  }, [messages.length]); // ✅ added dependency to fix React Hook warning
-
-  // Auto-scroll on new messages
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    }
-  }, [messages]);
+  }, [messages.length]);
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen">
@@ -86,7 +122,10 @@ export default function ShrinkChat() {
           className="flex-1 resize-none border rounded p-2"
           placeholder="Type something…"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            clearSilenceTimer();           // clear when they start typing
+            setInput(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();

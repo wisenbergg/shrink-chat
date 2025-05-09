@@ -1,4 +1,6 @@
+// app/page.tsx
 "use client";
+
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -17,14 +19,14 @@ export default function Page() {
     }
   }, [router]);
 
-  if (!isAuth) return null; // can replace with a loading spinner if you like
+  if (!isAuth) return null; // or render a spinner
 
   return (
     <>
-      <div style={{ position: "absolute", top: "0", left: "0", margin: "1rem" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, margin: "1rem" }}>
         <Image src="/logo.svg" alt="Logo" width={64} height={64} />
-        </div>
-        <ShrinkChat />
+      </div>
+      <ShrinkChat />
     </>
   );
 }
