@@ -21,7 +21,7 @@ export async function getMemoryForSession(
     .select('content,created_at,role')
     .eq('thread_id', sessionId)
     .order('created_at', { ascending: true })
-    .limit(limit * 2); // double to cover both roles
+    .limit(limit * 2);
 
   if (error) {
     console.error('❌ supabase getMemoryForSession error:', error);
@@ -48,6 +48,32 @@ export async function getMemoryForThreads(
     const mem = await getMemoryForSession(id, limitPerThread);
     all = all.concat(mem);
   }
-  // Sort everything chronologically across threads
   return all.sort((a, b) => a.timestamp - b.timestamp);
+}
+
+export interface UserProfile {
+  name?: string;
+  emotionalTone?: string[];
+  concerns?: string[];
+  onboardingComplete?: boolean;
+}
+
+const userProfiles: Record<string, UserProfile> = {};
+
+export function updateUserProfile(threadId: string, profile: UserProfile) {
+  if (!userProfiles[threadId]) {
+    userProfiles[threadId] = {};
+  }
+  userProfiles[threadId] = { ...userProfiles[threadId], ...profile };
+}
+
+export function getUserProfile(threadId: string): UserProfile | undefined {
+  return userProfiles[threadId];
+}
+
+export function markOnboardingComplete(threadId: string) {
+  if (!userProfiles[threadId]) {
+    userProfiles[threadId] = {};
+  }
+  userProfiles[threadId].onboardingComplete = true;
 }

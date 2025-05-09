@@ -1,15 +1,27 @@
 import OpenAI from 'openai';
 import { logSessionEntry } from './logSession';
-import { getMemoryForSession, getMemoryForThreads, MemoryTurn } from './sessionMemory';
+import { getMemoryForSession, getMemoryForThreads, MemoryTurn, getUserProfile } from './sessionMemory';
 import { fetchRecall } from './fetchRecall';
 import { inferToneTagsFromText } from './toneInference';
 import { predictSignal } from './predictSignal';
+
+export function buildPrompt(threadId: string, basePrompt: string): string {
+  const profile = getUserProfile(threadId);
+  let context = '';
+  if (profile) {
+    context += profile.name ? `You are speaking with ${profile.name}. ` : '';
+    context += profile.emotionalTone ? `They feel ${profile.emotionalTone.join(', ')}. ` : '';
+    context += profile.concerns ? `Their concerns include ${profile.concerns.join(', ')}. ` : '';
+    context += profile.onboardingComplete ? 'The user has completed onboarding. ' : '';
+  }
+  return `${context}${basePrompt}`.trim();
+}
 
 export interface PromptInput {
   sessionId?: string;
   threadIds?: string[];
   prompt: string;
-  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>; 
 }
 
 export interface PromptResult {
@@ -20,23 +32,14 @@ export interface PromptResult {
   model: string;
 }
 function ruptureDetector(userText: string): boolean {
-  const cues = [
-    'you don’t get',
-    'that’s not',
-    'you missed',
-    'you’re not',
-    'that wasn’t',
-    'you didn’t',
-  ];
+  const cues = [ 'you don’t get', 'that’s not', 'you missed', 'you’re not', 'that wasn’t', 'you didn’t', ];
   const lower = userText.toLowerCase();
   return cues.some(c => lower.includes(c));
 }
 
-// ── fix empty-interface lint errors ───────────────────────────────────────────
 export type FirstEmptyInterface  = Record<string, unknown>;
 export type SecondEmptyInterface = Record<string, unknown>;
 
-// ── dynamic scaffolding templates ────────────────────────────────────────────
 const openingTemplates = [
   "I’m here whenever you’re ready. What would you like to share today?",
   "No rush—take your time. What’s on your mind?",
@@ -61,32 +64,20 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   const { sessionId, threadIds, prompt, history = [] } = input;
   if (!prompt.trim()) throw new Error('Missing prompt');
 
-  const systemPrompt = process.env.SYSTEM_PROMPT ??
-    "Your role is to hold quiet, supportive space for the user. Offer meaningful, intentional questions — never filler or generic invitations. When the user asks for advice, offer it gently and concisely. When they show openness to reflection, you may invite deeper exploration at their pace. Above all, avoid overwhelming or pressuring the user; prioritize emotional safety, trust, and presence over productivity or solutions.";
+  const profileContext = buildPrompt(threadIds?.[0] || '', '');
+  const systemPrompt = `${profileContext}${process.env.SYSTEM_PROMPT ?? "Your role is to hold quiet, supportive space for the user. Offer meaningful, intentional questions — never filler or generic invitations. When the user asks for advice, offer it gently and concisely. When they show openness to reflection, you may invite deeper exploration at their pace. Above all, avoid overwhelming or pressuring the user; prioritize emotional safety, trust, and presence over productivity or solutions."}`;
 
-  // start building the messages for the LLM
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt }
   ];
 
-  // ─── 1) Turn‑level scaffold ─────────────────────────────────────────────
-  // infer tone asap so we can use it in our scaffold
   const inferredToneTags = await inferToneTagsFromText(prompt);
   const primaryTone = inferredToneTags[0] || 'your feelings';
+  const scaffold = history.length === 0 ? pickOpeningScaffold() : pickFollowupScaffold(primaryTone);
+  messages.push({ role: 'system', content: scaffold });
 
-  const scaffold = history.length === 0
-    ? pickOpeningScaffold()
-    : pickFollowupScaffold(primaryTone);
-
-  messages.push({
-    role: 'system',
-    content: scaffold
-  });
-
-  // ─── the rest of your pipeline ───────────────────────────────────────────
   let recallUsed = false;
   let retrievedChunks: Array<{ discipline: string; topic: string; source: string; content: string; score: number }> = [];
-
   const predictedSignal = await predictSignal(prompt);
 
   try {
@@ -98,31 +89,24 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   }
 
   if (recallUsed && retrievedChunks.length) {
-    const contextBlock = retrievedChunks.slice(0, 3)
-      .map(e => `(${e.discipline}) ${e.topic}: ${e.content}`)
-      .join("\n\n");
+    const contextBlock = retrievedChunks.slice(0, 3).map(e => `(${e.discipline}) ${e.topic}: ${e.content}`).join("\n\n");
     messages.unshift({
       role: 'system',
       content: `You are grounded in the following therapeutic references:\n\n${contextBlock}\n\nUse these insights naturally and conversationally, weaving them into your responses without quoting definitions or sounding clinical. Prioritize the user’s unique experience.`
     });
   }
 
-  // memory & history
   let memory: MemoryTurn[] = [];
   if (threadIds?.length) {
     memory = await getMemoryForThreads(threadIds, 5);
   } else if (sessionId) {
     memory = await getMemoryForSession(sessionId, 10);
   }
-  for (const turn of memory)    messages.push({ role: turn.role,    content: turn.content });
-  for (const h of history)      messages.push({ role: h.role,       content: h.content });
+  for (const turn of memory) messages.push({ role: turn.role, content: turn.content });
+  for (const h of history) messages.push({ role: h.role, content: h.content });
 
-  // rupture‑repair override
   if (ruptureDetector(prompt)) {
-    messages.push({
-      role: 'system',
-      content: `Well, that's embarrassing. Think you can help me figure out what I missed?`
-    });
+    messages.push({ role: 'system', content: `Well, that's embarrassing. Think you can help me figure out what I missed?` });
   }
 
   const useMicro = history.length === 0 && (!threadIds || threadIds.length === 0) && !sessionId;
@@ -137,11 +121,9 @@ export async function handlePrompt(input: PromptInput): Promise<PromptResult> {
   });
 
   let response = completion.choices[0].message?.content?.trim() ?? '';
-
-  // fallbacks ...
   const repetitionFallbacks = process.env.REPETITION_FALLBACKS?.split('|') || [];
   const withdrawalFallbacks = process.env.WITHDRAWAL_FALLBACKS?.split('|') || [];
-  const crisisFallback      = process.env.CRISIS_FALLBACK || '';
+  const crisisFallback = process.env.CRISIS_FALLBACK || '';
 
   if (detectRepetition(history, response) && repetitionFallbacks.length) {
     response += `\n\n${randomChoice(repetitionFallbacks)}`;

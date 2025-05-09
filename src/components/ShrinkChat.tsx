@@ -13,12 +13,11 @@ interface Message {
 
 export default function ShrinkChat() {
   const [threadId] = useState(() => uuid());
-  const [messages, setMessages] = useState<Message[]>([
-    { sender: "engine", text: "Whenever you’re ready, I’m here. What’s on your mind today?" },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   const silenceTimerRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -34,21 +33,28 @@ export default function ShrinkChat() {
   const scheduleSilenceHandler = useCallback(() => {
     clearSilenceTimer();
     silenceTimerRef.current = window.setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "engine", text: "I’m here whenever you’re ready to continue." },
-      ]);
-      setReminderSent(true); // Mark reminder as sent
+      setMessages((prev) => [...prev, { sender: "engine", text: "I’m here whenever you’re ready to continue." }]);
+      setReminderSent(true);
       silenceTimerRef.current = null;
     }, 120_000);
   }, [clearSilenceTimer]);
 
   useEffect(() => {
+    if (!onboardingComplete) {
+      setMessages([
+        { sender: "engine", text: "Before we begin, would you like to tell me your name — or stay anonymous? It’s totally up to you." },
+      ]);
+    } else {
+      setMessages((prev) =>
+        prev.length === 0 ? [{ sender: "engine", text: "Whenever you’re ready, I’m here. What’s on your mind today?" }] : prev
+      );
+    }
+  }, [onboardingComplete]);
+
+  useEffect(() => {
     const last = messages[messages.length - 1];
-    if (last?.sender === "engine") {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-      }
+    if (last?.sender === "engine" && scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
   }, [messages]);
 
@@ -61,22 +67,49 @@ export default function ShrinkChat() {
     if (!prompt) return;
 
     clearSilenceTimer();
-    setReminderSent(false); // Reset reminder on user activity
+    setReminderSent(false);
     setMessages((prev) => [...prev, { sender: "user", text: prompt }]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const res = await fetch("/api/shrink", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, threadId }),
-      });
-      const data = await res.json();
-      setMessages((prev) => [...prev, { sender: "engine", text: data.response_text }]);
-      // Only schedule if reminder hasn't been sent
-      if (!reminderSent) {
-        scheduleSilenceHandler();
+      if (!onboardingComplete) {
+        let nextMessage = "";
+        if (prompt.toLowerCase().includes("anonymous")) {
+          await fetch("/api/onboarding", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ threadId }),
+          });
+          nextMessage = "Thanks. Is there anything you’d like me to know about how you’re feeling today?";
+        } else if (prompt.split(" ").length < 5) {
+          await fetch("/api/onboarding", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ threadId, name: prompt }),
+          });
+          nextMessage = "Thanks. Is there anything you’d like me to know about how you’re feeling today?";
+        } else {
+          await fetch("/api/onboarding", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ threadId, concerns: [prompt] }),
+          });
+          nextMessage = "Thank you. We can start wherever you like — you’re not alone here.";
+          setOnboardingComplete(true);
+        }
+        setMessages((prev) => [...prev, { sender: "engine", text: nextMessage }]);
+      } else {
+        const res = await fetch("/api/shrink", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, threadId }),
+        });
+        const data = await res.json();
+        setMessages((prev) => [...prev, { sender: "engine", text: data.response_text }]);
+        if (!reminderSent) {
+          scheduleSilenceHandler();
+        }
       }
     } catch (err) {
       console.error(err);
@@ -88,8 +121,6 @@ export default function ShrinkChat() {
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     clearSilenceTimer();
     setInput(e.target.value);
-
-    // Auto-resize logic
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
