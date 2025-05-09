@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -19,14 +18,16 @@ export default function Page() {
     }
   }, [router]);
 
-  if (!isAuth) return null; // or render a spinner
+  if (!isAuth) return null;
 
   return (
-    <>
-      <div style={{ position: "absolute", top: 0, left: 0, margin: "1rem" }}>
+    <div className="flex flex-col h-screen relative">
+      <div className="absolute top-4 left-4">
         <Image src="/logo.svg" alt="Logo" width={64} height={64} />
       </div>
-      <ShrinkChat />
-    </>
+      <div className="flex-1 flex overflow-hidden">
+        <ShrinkChat />
+      </div>
+    </div>
   );
 }
