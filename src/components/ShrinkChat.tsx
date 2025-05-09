@@ -21,6 +21,7 @@ export default function ShrinkChat() {
 
   const silenceTimerRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
@@ -78,6 +79,17 @@ export default function ShrinkChat() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    clearSilenceTimer();
+    setInput(e.target.value);
+
+    // Auto-resize logic
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-full w-full">
       <Card className="flex-1 flex flex-col bg-card rounded-xl shadow-lg">
@@ -102,20 +114,19 @@ export default function ShrinkChat() {
         </CardContent>
         <div className="flex gap-2 p-4 border-t border-border">
           <textarea
+            ref={textareaRef}
             rows={1}
-            className="flex-1 resize-none border rounded p-2 bg-input text-foreground"
+            className="flex-1 resize-none border rounded p-2 bg-input text-foreground overflow-hidden"
             placeholder="Type something…"
             value={input}
-            onChange={(e) => {
-              clearSilenceTimer();
-              setInput(e.target.value);
-            }}
+            onChange={handleInputChange}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit();
               }
             }}
+            style={{ minHeight: "2.5rem", maxHeight: "10rem" }}
           />
           <Button
             onClick={handleSubmit}
