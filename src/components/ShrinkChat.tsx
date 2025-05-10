@@ -145,7 +145,7 @@ export default function ShrinkChat() {
     <div className="flex flex-col h-screen w-full">
       <div className="max-w-2xl mx-auto flex flex-col flex-1 w-full">
         <Card className="flex flex-col flex-1 overflow-hidden">
-          <CardContent className="flex flex-col flex-1 p-0">
+          <CardContent className="flex flex-col flex-1 p-0 overflow-hidden">
             <div
               ref={scrollRef}
               onScroll={checkUserScroll}
@@ -189,7 +189,7 @@ export default function ShrinkChat() {
                     handleSubmit();
                   }
                 }}
-                style={{ minHeight: "2.5rem", maxHeight: "10rem" }}
+                style={{ minHeight: "2.5rem", maxHeight: "10rem", overflowY: "auto" }}
               />
               <Button
                 onClick={handleSubmit}
