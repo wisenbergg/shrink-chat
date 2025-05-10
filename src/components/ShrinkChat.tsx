@@ -91,6 +91,12 @@ export default function ShrinkChat() {
     setReminderSent(false);
     setMessages((prev) => [...prev, { sender: 'user', text: prompt }]);
     setInput('');
+
+    // ✅ Reset textarea height after sending
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+
     setIsLoading(true);
     setIsTyping(true);
 
@@ -142,12 +148,12 @@ export default function ShrinkChat() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen">
+    <div className="w-full max-w-[42rem] mx-auto py-12 px-4 flex flex-col h-screen">
       <Card className="flex-1 flex overflow-hidden">
         <CardContent
           ref={scrollRef}
           onScroll={checkUserScroll}
-          className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto"
+          className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto min-h-0"
           style={{ wordBreak: 'break-word' }}
         >
           {messages.map((msg, idx) => (
