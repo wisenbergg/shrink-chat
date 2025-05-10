@@ -142,65 +142,62 @@ export default function ShrinkChat() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full">
-      <div className="max-w-2xl mx-auto flex flex-col flex-1 w-full">
-        <Card className="flex flex-col flex-1 overflow-hidden">
-          <CardContent className="flex flex-col flex-1 p-0 overflow-hidden">
+    <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen">
+      <Card className="flex-1 flex overflow-hidden">
+        <CardContent
+          ref={scrollRef}
+          onScroll={checkUserScroll}
+          className="space-y-4 p-6 flex flex-col flex-1 overflow-y-auto"
+          style={{ wordBreak: 'break-word' }}
+        >
+          {messages.map((msg, idx) => (
             <div
-              ref={scrollRef}
-              onScroll={checkUserScroll}
-              className="flex-1 overflow-y-auto p-6 space-y-4"
-              style={{ wordBreak: 'break-word' }}
+              key={idx}
+              className={`relative group p-3 rounded-xl animate-fadein ${
+                msg.sender === "user"
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
             >
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`relative group p-3 rounded-xl animate-fadein ${
-                    msg.sender === "user"
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {msg.text}
-                  {msg.sender === "engine" && (
-                    <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
-                  )}
-                </div>
-              ))}
-              {isTyping && (
-                <div className="typing-indicator">
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                  <div className="dot"></div>
-                </div>
+              {msg.text}
+              {msg.sender === "engine" && (
+                <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
               )}
             </div>
-            <div className="flex gap-2 p-4 border-t border-border">
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                className="flex-1 resize-none border rounded p-2 bg-input text-foreground overflow-hidden"
-                placeholder="Type something…"
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                style={{ minHeight: "2.5rem", maxHeight: "10rem", overflowY: "auto" }}
-              />
-              <Button
-                onClick={handleSubmit}
-                disabled={isLoading}
-                className="bg-primary text-primary-foreground"
-              >
-                {isLoading ? "…" : "Send"}
-              </Button>
+          ))}
+          {isTyping && (
+            <div className="typing-indicator">
+              <div className="dot"></div>
+              <div className="dot"></div>
+              <div className="dot"></div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="flex gap-2 mt-4">
+        <textarea
+          ref={textareaRef}
+          rows={1}
+          className="flex-1 resize-none border rounded p-2 bg-input text-foreground overflow-hidden"
+          placeholder="Type something…"
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          style={{ minHeight: "2.5rem", maxHeight: "10rem", overflowY: "auto" }}
+        />
+        <Button
+          onClick={handleSubmit}
+          disabled={isLoading}
+          className="bg-primary text-primary-foreground"
+        >
+          {isLoading ? "…" : "Send"}
+        </Button>
       </div>
     </div>
   );
