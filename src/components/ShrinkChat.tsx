@@ -59,11 +59,11 @@ export default function ShrinkChat() {
   };
 
   useEffect(() => {
-    if (onboardingStep === 'intro1') showMessageWithDelay("Welcome. I’m really glad you’re here.", 'intro2');
-    if (onboardingStep === 'intro2') showMessageWithDelay("This is a space where you can share what’s on your mind, reflect, or just be — no pressure.", 'intro3');
-    if (onboardingStep === 'intro3') showMessageWithDelay("First, if you’re comfortable, I’d love to get to know you a little.", 'intro4');
-    if (onboardingStep === 'intro4') showMessageWithDelay("You’re always anonymous here — but sharing your name or how you’re feeling today can help me personalize your experience.", 'invite');
-    if (onboardingStep === 'invite') showMessageWithDelay("You can skip this anytime by typing “skip.”", 'done');
+    if (onboardingStep === 'intro1') showMessageWithDelay("Hey, I’m really glad you’re here.", 'intro2');
+    if (onboardingStep === 'intro2') showMessageWithDelay("This space is now yours — A private place to share what’s on your mind, reflect, or blow off some steam. No pressure, no rush.", 'intro3');
+    if (onboardingStep === 'intro3') showMessageWithDelay("Whenever you're ready, I’d love to get to know you little better — we can start with your name or if you're comfortable, we can talk more about how you’re feeling today and what brought you here. Whatever you share stays here, just between us.", 'intro4');
+    if (onboardingStep === 'intro4') showMessageWithDelay("So, feel free to take a beat. You're in control", 'invite');
+    if (onboardingStep === 'invite') showMessageWithDelay("As soon as you're ready to talk, I'll be here to listen", 'done');
   }, [onboardingStep]);
 
   const showMessageWithDelay = (text: string, nextStep: OnboardingStep) => {
