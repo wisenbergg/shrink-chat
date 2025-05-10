@@ -21,10 +21,10 @@ export default function ShrinkChat() {
   const [reminderSent, setReminderSent] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro1');
   const [isTyping, setIsTyping] = useState(false);
-
-  const silenceTimerRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const silenceTimerRef = useRef<number | null>(null);
+  const userScrolledUpRef = useRef(false);
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
@@ -45,22 +45,25 @@ export default function ShrinkChat() {
     }, 120_000);
   }, [clearSilenceTimer]);
 
+  const scrollToBottom = () => {
+    if (scrollRef.current && !userScrolledUpRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }
+  };
+
+  const checkUserScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      userScrolledUpRef.current = scrollHeight - scrollTop - clientHeight > 100;
+    }
+  };
+
   useEffect(() => {
-    if (onboardingStep === 'intro1') {
-      showMessageWithDelay("Welcome. I’m really glad you’re here.", 'intro2');
-    }
-    if (onboardingStep === 'intro2') {
-      showMessageWithDelay("This is a space where you can share what’s on your mind, reflect, or just be — no pressure.", 'intro3');
-    }
-    if (onboardingStep === 'intro3') {
-      showMessageWithDelay("First, if you’re comfortable, I’d love to get to know you a little.", 'intro4');
-    }
-    if (onboardingStep === 'intro4') {
-      showMessageWithDelay("You’re always anonymous here — but sharing your name or how you’re feeling today can help me personalize your experience.", 'invite');
-    }
-    if (onboardingStep === 'invite') {
-      showMessageWithDelay("You can skip this anytime by typing “skip.”", 'done');
-    }
+    if (onboardingStep === 'intro1') showMessageWithDelay("Welcome. I’m really glad you’re here.", 'intro2');
+    if (onboardingStep === 'intro2') showMessageWithDelay("This is a space where you can share what’s on your mind, reflect, or just be — no pressure.", 'intro3');
+    if (onboardingStep === 'intro3') showMessageWithDelay("First, if you’re comfortable, I’d love to get to know you a little.", 'intro4');
+    if (onboardingStep === 'intro4') showMessageWithDelay("You’re always anonymous here — but sharing your name or how you’re feeling today can help me personalize your experience.", 'invite');
+    if (onboardingStep === 'invite') showMessageWithDelay("You can skip this anytime by typing “skip.”", 'done');
   }, [onboardingStep]);
 
   const showMessageWithDelay = (text: string, nextStep: OnboardingStep) => {
@@ -69,14 +72,11 @@ export default function ShrinkChat() {
       setMessages((prev) => [...prev, { sender: 'engine', text }]);
       setOnboardingStep(nextStep);
       setIsTyping(false);
-    }, 1500);
+    }, 2500);
   };
 
   useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (last?.sender === "engine" && scrollRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    }
+    scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
@@ -92,35 +92,41 @@ export default function ShrinkChat() {
     setMessages((prev) => [...prev, { sender: 'user', text: prompt }]);
     setInput('');
     setIsLoading(true);
+    setIsTyping(true);
 
     try {
       if (onboardingStep !== 'done') {
-        if (prompt.toLowerCase() === 'skip') {
-          setOnboardingStep('done');
-          setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
-        } else {
-          await fetch('/api/onboarding', {
+        setTimeout(async () => {
+          if (prompt.toLowerCase() === 'skip') {
+            setOnboardingStep('done');
+            setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
+          } else {
+            await fetch('/api/onboarding', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ threadId, name: prompt }),
+            });
+            setOnboardingStep('done');
+            setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
+          }
+          setIsTyping(false);
+        }, 1500);
+      } else {
+        setTimeout(async () => {
+          const res = await fetch('/api/shrink', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ threadId, name: prompt }),
+            body: JSON.stringify({ prompt, threadId }),
           });
-          setOnboardingStep('done');
-          setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
-        }
-      } else {
-        const res = await fetch('/api/shrink', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, threadId }),
-        });
-        const data = await res.json();
-        setMessages((prev) => [...prev, { sender: 'engine', text: data.response_text }]);
-        if (!reminderSent) {
-          scheduleSilenceHandler();
-        }
+          const data = await res.json();
+          setMessages((prev) => [...prev, { sender: 'engine', text: data.response_text }]);
+          if (!reminderSent) scheduleSilenceHandler();
+          setIsTyping(false);
+        }, 1500);
       }
     } catch (err) {
       console.error(err);
+      setIsTyping(false);
     } finally {
       setIsLoading(false);
     }
@@ -136,63 +142,66 @@ export default function ShrinkChat() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4 flex flex-col h-screen w-full">
-      <Card className="flex flex-col flex-1 overflow-hidden">
-        <CardContent className="flex flex-col flex-1 p-0">
-          <div
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto p-6 space-y-4"
-            style={{ wordBreak: 'break-word' }}
-          >
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`relative group p-3 rounded-xl ${
-                  msg.sender === "user"
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {msg.text}
-                {msg.sender === "engine" && (
-                  <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
-                )}
-              </div>
-            ))}
-            {isTyping && (
-              <div className="flex items-center space-x-1">
-                <span className="dot w-2 h-2 bg-muted-foreground rounded-full animate-pulse"></span>
-                <span className="dot w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-150"></span>
-                <span className="dot w-2 h-2 bg-muted-foreground rounded-full animate-pulse delay-300"></span>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2 p-4 border-t border-border">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              className="flex-1 resize-none border rounded p-2 bg-input text-foreground overflow-hidden"
-              placeholder="Type something…"
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              style={{ minHeight: "2.5rem", maxHeight: "10rem" }}
-            />
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="bg-primary text-primary-foreground"
+    <div className="flex flex-col h-screen w-full">
+      <div className="max-w-2xl mx-auto flex flex-col flex-1 w-full">
+        <Card className="flex flex-col flex-1 overflow-hidden">
+          <CardContent className="flex flex-col flex-1 p-0">
+            <div
+              ref={scrollRef}
+              onScroll={checkUserScroll}
+              className="flex-1 overflow-y-auto p-6 space-y-4"
+              style={{ wordBreak: 'break-word' }}
             >
-              {isLoading ? "…" : "Send"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`relative group p-3 rounded-xl animate-fadein ${
+                    msg.sender === "user"
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {msg.text}
+                  {msg.sender === "engine" && (
+                    <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
+                  )}
+                </div>
+              ))}
+              {isTyping && (
+                <div className="typing-indicator">
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                  <div className="dot"></div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 p-4 border-t border-border">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                className="flex-1 resize-none border rounded p-2 bg-input text-foreground overflow-hidden"
+                placeholder="Type something…"
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                style={{ minHeight: "2.5rem", maxHeight: "10rem" }}
+              />
+              <Button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="bg-primary text-primary-foreground"
+              >
+                {isLoading ? "…" : "Send"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
