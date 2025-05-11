@@ -1,9 +1,9 @@
 import OpenAI from 'openai';
 import {
-  getMemoryForSession,
-  getMemoryForThreads,
   getUserProfile,
-  logMemoryTurn
+  logMemoryTurn,
+  // getMemoryForSession,
+  // getMemoryForThreads
 } from './sessionMemory';
 import { fetchRecall } from './fetchRecall';
 import { inferToneTagsFromText } from './toneInference';
@@ -50,13 +50,6 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
   const signal = await predictSignal(prompt);
   const tone_tags = await inferToneTagsFromText(prompt);
   const rupture = ruptureDetector(prompt);
-
-  // temporarily disabling unused memory until it's reintegrated into prompt flow
-  // const memory = sessionId
-  //   ? await getMemoryForSession(sessionId)
-  //   : threadIds
-  //   ? await getMemoryForThreads(threadIds[0])
-  //   : [];
 
   const threadId = threadIds?.[0] ?? sessionId ?? 'unknown';
 
@@ -106,13 +99,16 @@ Above all, prioritize emotional safety, trust, and presence over productivity or
 
   const response_text = completion.choices[0].message.content ?? '';
 
+  // Memory logging (for RAG context later)
   await logMemoryTurn(threadId, 'user', prompt);
   await logMemoryTurn(threadId, 'assistant', response_text);
 
+  // Drift detection
   if (!toneDriftFilter(response_text)) {
     console.warn('⚠️ Tone drift detected in response:', response_text);
   }
 
+  // Full session log
   await logSessionEntry({
     sessionId: sessionId ?? 'unknown',
     prompt,
