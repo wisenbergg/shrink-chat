@@ -1,14 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 
-interface LogEntry {
+export interface LogEntry {
   sessionId: string;
-  prompt: string;
-  response: string;
-  tone_tags: string[];
-  signal: string;
-  rupture: boolean;
-  recallUsed: boolean;
+  content: string;
+  role?: 'user' | 'assistant';
+  apologyCount?: number;
+  toneTags?: string[];
+  signal?: 'low' | 'medium' | 'high' | 'ambiguous';
+  recallUsed?: boolean;
 }
 
 const LOG_PATH = path.join(process.cwd(), 'data', 'logs');
@@ -20,9 +20,10 @@ export async function logSessionEntry(entry: LogEntry) {
     const timestamp = new Date().toISOString();
     const fileName = path.join(LOG_PATH, `${entry.sessionId}.log.jsonl`);
 
+    // Spread entry first, then override/insert timestamp exactly once
     const line = JSON.stringify({
-      timestamp,
-      ...entry
+      ...entry,
+      timestamp
     });
 
     fs.appendFileSync(fileName, line + '\n', 'utf8');
@@ -30,3 +31,4 @@ export async function logSessionEntry(entry: LogEntry) {
     console.error('❌ Failed to log session entry:', err);
   }
 }
+

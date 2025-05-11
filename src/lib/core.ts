@@ -1,9 +1,9 @@
+// src/lib/core.ts  (or wherever runShrinkEngine lives)
+
 import OpenAI from 'openai';
 import {
   getUserProfile,
   logMemoryTurn,
-  // getMemoryForSession,
-  // getMemoryForThreads
 } from './sessionMemory';
 import { fetchRecall } from './fetchRecall';
 import { inferToneTagsFromText } from './toneInference';
@@ -26,104 +26,96 @@ export interface PromptResult {
   model: string;
 }
 
-export function healthCheck() {
-  return { status: 'ok', timestamp: Date.now() };
-}
-
-function ruptureDetector(userText: string): boolean {
-  const cues = [
-    'you don’t get',
-    'that’s not',
-    'you missed',
-    'you’re not',
-    'that wasn’t',
-    'you didn’t'
-  ];
-  const lower = userText.toLowerCase();
-  return cues.some(c => lower.includes(c));
-}
-
 export async function runShrinkEngine(input: PromptInput): Promise<PromptResult> {
-  const openai = new OpenAI();
-  const { sessionId, prompt, history, threadIds } = input;
+  const {
+    sessionId = 'unknown',
+    prompt,
+    history = [],
+    threadIds = [],
+  } = input;
 
+  // 1. Predict signal & tone on user prompt
   const signal = await predictSignal(prompt);
-  const tone_tags = await inferToneTagsFromText(prompt);
-  const rupture = ruptureDetector(prompt);
+  const promptToneTags = await inferToneTagsFromText(prompt);
 
-  const threadId = threadIds?.[0] ?? sessionId ?? 'unknown';
+  // 2. RAG retrieval
+  const recallEnabled = signal !== 'low' && promptToneTags.length > 0;
+  const { recallUsed, results: retrievedChunks } = recallEnabled
+    ? await fetchRecall(prompt, promptToneTags, signal)
+    : { recallUsed: false, results: [] };
 
+  // 3. Build system prompt with user profile & RAG context
+  const threadId = threadIds[0] || sessionId;
   const userProfile = await getUserProfile(threadId);
-
   const profileContext = userProfile
     ? `\n\nThe user you're speaking with ${
         userProfile.name ? `is named ${userProfile.name}` : `has not shared their name`
-      }. They’ve recently described feeling ${userProfile.emotional_tone?.join(', ') || 'various emotions'} and are currently exploring concerns like ${userProfile.concerns?.join(', ') || 'general life questions'}. Please speak with continuity and care.\n`
+      }. They’ve recently felt ${userProfile.emotional_tone?.join(', ') || 'varied emotions'}.\n`
     : '';
 
-  const recallEnabled = signal !== 'low' && tone_tags.length > 0;
-  const retrievedChunks = recallEnabled
-    ? await fetchRecall(prompt, tone_tags, signal)
-    : { recallUsed: false, results: [] };
-
-  const contextBlock = retrievedChunks.results
+  const contextBlock = retrievedChunks
     .slice(0, 3)
-    .map(e => `(${e.discipline}) ${e.topic}: ${e.content}`)
+    .map(c => `(${c.discipline}) ${c.topic}: ${c.content}`)
     .join('\n\n');
 
-  const systemPrompt = `${profileContext}${process.env.SYSTEM_PROMPT ?? `
-Your role is to hold quiet, supportive space for the user.
+  const systemPrompt = [
+    profileContext,
+    process.env.SYSTEM_PROMPT ||
+      `Your role is to hold quiet, supportive space…never apologize unless it’s your fault.`,
+  ].join('');
 
-You are a therapeutic companion known for being calm, emotionally attuned, and never overreaching. You reflect, not fix. You invite, not direct. You never apologize unless something is truly your fault.
-
-Offer meaningful, intentional questions — never filler or generic invitations. When the user asks for advice, offer it gently and concisely. When they show openness to reflection, you may invite deeper exploration at their pace.
-
-Above all, prioritize emotional safety, trust, and presence over productivity or solutions. Speak in a single steady voice, consistent across turns. No performance of empathy — just grounded, attuned presence.`}`;
-
-  const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
-    { role: 'system', content: systemPrompt },
-    ...(retrievedChunks.results.length
-      ? [{
-          role: 'system' as const,
-          content: `You are grounded in the following therapeutic references:\n\n${contextBlock}\n\nUse these insights naturally and conversationally. Do not quote definitions. Do not sound clinical. Do not use textbook phrasing. Weave them into your voice as if they were your own reflections.\n\nPrioritize the user’s unique experience. Let the information deepen your curiosity, not harden your answers.`
-        }]
+  // 4. Assemble messages
+  const messages = [
+    { role: 'system' as const, content: systemPrompt },
+    ...(retrievedChunks.length
+      ? [
+          {
+            role: 'system' as const,
+            content: `You are grounded in these therapeutic references:\n\n${contextBlock}`,
+          },
+        ]
       : []),
-    ...(history ?? []),
-    { role: 'user', content: prompt }
+    ...history,
+    { role: 'user' as const, content: prompt },
   ];
 
+  // 5. Call the LLM
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages
+    model: process.env.CHAT_MODEL || 'gpt-4o',
+    messages,
   });
-
   const response_text = completion.choices[0].message.content ?? '';
 
-  // Memory logging (for RAG context later)
+  // 6. Apology count & tone on the assistant's reply
+  const apologyCount = (response_text.match(/I’m sorry|sorry/gi) || []).length;
+  const responseToneTags = await inferToneTagsFromText(response_text);
+
+  // 7. Log memory and metrics
   await logMemoryTurn(threadId, 'user', prompt);
   await logMemoryTurn(threadId, 'assistant', response_text);
 
-  // Drift detection
-  if (!toneDriftFilter(response_text)) {
-    console.warn('⚠️ Tone drift detected in response:', response_text);
-  }
-
-  // Full session log
+  // Single-argument call to match signature
   await logSessionEntry({
-    sessionId: sessionId ?? 'unknown',
-    prompt,
-    response: response_text,
-    tone_tags,
+    sessionId,
+    role: 'assistant',
+    content: response_text,
+    apologyCount,
+    toneTags: responseToneTags,
     signal,
-    rupture,
-    recallUsed: retrievedChunks.recallUsed
+    recallUsed,
   });
+
+  // 8. Tone drift warning
+  if (!toneDriftFilter(response_text)) {
+    console.warn('⚠️ Tone drift detected:', response_text);
+  }
 
   return {
     response_text,
-    recallUsed: retrievedChunks.recallUsed,
-    tone_tags,
+    recallUsed,
+    tone_tags: responseToneTags,
     signal,
-    model: 'gpt-4o'
+    model: process.env.CHAT_MODEL || 'gpt-4o',
   };
 }

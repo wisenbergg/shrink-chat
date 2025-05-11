@@ -1,34 +1,41 @@
-export interface RAGEntry {
-    thread_id: string;
-    response_text: string;
-    discipline: string;
-    topic: string;
-    source: string;
-    content: string;
-    embedding: number[];
-    signal_label: 'low' | 'medium' | 'high';
-    tone_tags: string[];
-    score: number;
-  }
-  
-  export function filterAndRankRAG(
-    entries: RAGEntry[],
-    predictedSignal: 'low' | 'medium' | 'high' | 'ambiguous',
-    inferredToneTags: string[]
-  ): RAGEntry[] {
-    let filtered: RAGEntry[] = entries;
-  
-    if (predictedSignal !== 'ambiguous') {
-      filtered = filtered.filter((e: RAGEntry) => e.signal_label === predictedSignal);
+// src/lib/filterUtils.ts
+
+export interface ScoredEntry {
+  discipline: string;
+  topic: string;
+  source: string;
+  content: string;
+  score: number;
+  signal_label: 'low' | 'medium' | 'high' | 'ambiguous';
+  tone_tags: string[];
+}
+
+/**
+ * Soft-boosted filtering & ranking:
+ *  - Adds a small boost for matching signal_label
+ *  - Adds a small boost for sharing any tone tag
+ *  - Returns the full list sorted by boosted score; upstream code slices top-N.
+ */
+export function filterAndRankRAG(
+  entries: ScoredEntry[],
+  predictedSignal: 'low' | 'medium' | 'high' | 'ambiguous',
+  inferredToneTags: string[]
+): ScoredEntry[] {
+  const SIGNAL_BOOST = 0.15;
+  const TONE_BOOST   = 0.10;
+
+  const boosted = entries.map(e => {
+    let boost = 0;
+    if (predictedSignal !== 'ambiguous' && e.signal_label === predictedSignal) {
+      boost += SIGNAL_BOOST;
     }
-  
-    if (inferredToneTags.length > 0) {
-      filtered = filtered.filter((e: RAGEntry) =>
-        e.tone_tags.some((tag: string) => inferredToneTags.includes(tag))
-      );
+    if (inferredToneTags.some(tag => e.tone_tags.includes(tag))) {
+      boost += TONE_BOOST;
     }
-  
-    filtered.sort((a: RAGEntry, b: RAGEntry) => b.score - a.score);
-    return filtered;
-  }
-  
+    return { ...e, score: e.score + boost };
+  });
+
+  // Sort descending
+  boosted.sort((a, b) => b.score - a.score);
+  return boosted;
+}
