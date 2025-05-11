@@ -11,14 +11,14 @@ const ParamsSchema = z.object({
   threadId: z.string().min(1)
 });
 
-// GET /api/memory/[threadId] — fetch memory
+// GET /api/memory/[threadId]
 export async function GET(
   request: NextRequest,
-  context: { params: { threadId: string } }
+  { params }: { params: { threadId: string } }
 ) {
-  const { threadId } = context.params;
-
+  const { threadId } = params;
   const parsed = ParamsSchema.safeParse({ threadId });
+
   if (!parsed.success) {
     return NextResponse.json({ error: 'Missing or invalid threadId' }, { status: 400 });
   }
@@ -32,14 +32,14 @@ export async function GET(
   }
 }
 
-// DELETE /api/memory/[threadId] — erase memory
+// DELETE /api/memory/[threadId]
 export async function DELETE(
   request: NextRequest,
-  context: { params: { threadId: string } }
+  { params }: { params: { threadId: string } }
 ) {
-  const { threadId } = context.params;
-
+  const { threadId } = params;
   const parsed = ParamsSchema.safeParse({ threadId });
+
   if (!parsed.success) {
     return NextResponse.json({ error: 'Missing or invalid threadId' }, { status: 400 });
   }
