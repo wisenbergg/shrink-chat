@@ -29,6 +29,7 @@ module.exports = {
           'sidebar-accent': 'var(--sidebar-accent)',
           'sidebar-accent-foreground': 'var(--sidebar-accent-foreground)',
         },
+        
         borderRadius: {
           sm: 'var(--radius-sm)',
           md: 'var(--radius-md)',
