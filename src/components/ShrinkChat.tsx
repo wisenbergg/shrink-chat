@@ -5,13 +5,15 @@ import { v4 as uuid } from "uuid";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { FeedbackForm } from "../components/FeedbackForm";
+import JournalResetButton from '@/components/JournalResetButton';
+
 
 interface Message {
   sender: "user" | "engine";
   text: string;
 }
 
-type OnboardingStep = 'intro1' | 'intro2' | 'intro3' | 'intro4' | 'invite' | 'done';
+type OnboardingStep = 'intro1' | 'intro2' | 'intro3' | 'invite' | 'done';
 
 export default function ShrinkChat() {
   const [threadId] = useState(() => uuid());
@@ -25,6 +27,8 @@ export default function ShrinkChat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const silenceTimerRef = useRef<number | null>(null);
   const userScrolledUpRef = useRef(false);
+  const [userName, setUserName] = useState<string | null>(null);
+
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
@@ -60,10 +64,9 @@ export default function ShrinkChat() {
 
   useEffect(() => {
     if (onboardingStep === 'intro1') showMessageWithDelay("Hey, I’m really glad you’re here.", 'intro2');
-    if (onboardingStep === 'intro2') showMessageWithDelay("This space is now yours — A private place to share what’s on your mind, reflect, or blow off some steam. No pressure, no rush.", 'intro3');
-    if (onboardingStep === 'intro3') showMessageWithDelay("Whenever you're ready, I’d love to get to know you little better — we can start with your name or if you're comfortable, we can talk more about how you’re feeling today and what brought you here. Whatever you share stays here, just between us.", 'intro4');
-    if (onboardingStep === 'intro4') showMessageWithDelay("So, feel free to take a beat. You're in control", 'invite');
-    if (onboardingStep === 'invite') showMessageWithDelay("As soon as you're ready to talk, I'll be here to listen", 'done');
+    if (onboardingStep === 'intro2') showMessageWithDelay("This space is now yours — A safe place to share your thoughts, feelings, and experiences in total privacy", 'intro3');
+    if (onboardingStep === 'intro3') showMessageWithDelay("If you're feeling up to it, I’d love to start by getting to know you — It can be something small like your name or if there's anything top of mind, we can jump ahead and tackle it together. Remember, it's just us. nothing you say will ever leave your computer.", 'invite');
+    if (onboardingStep === 'invite') showMessageWithDelay("As soon as you're ready to share just drop your thoughts in down below, I'll be here to help when you do", 'done');
   }, [onboardingStep]);
 
   const showMessageWithDelay = (text: string, nextStep: OnboardingStep) => {
@@ -82,6 +85,33 @@ export default function ShrinkChat() {
   useEffect(() => {
     return () => clearSilenceTimer();
   }, [clearSilenceTimer]);
+
+  useEffect(() => {
+    async function loadThreadHistory() {
+       const res = await fetch(`/api/memory/${threadId}`);
+       const { memory } = await res.json();
+       const parsedMessages = memory.map((m: { role: string; content: string }) => ({
+      sender: m.role === 'assistant' ? 'engine' : 'user',
+      text: m.content,
+    }));
+    setMessages(parsedMessages);
+  }
+  
+    if (threadId) loadThreadHistory();
+  }, [threadId]);
+  
+  useEffect(() => {
+    async function loadUserProfile() {
+      const res = await fetch(`/api/profile/${threadId}`);
+      const { profile } = await res.json();
+      if (profile?.name) {
+        setUserName(profile.name);
+      }
+    }
+  
+    if (threadId) loadUserProfile();
+  }, [threadId]);
+  
 
   const handleSubmit = async () => {
     const prompt = input.trim();
@@ -180,7 +210,17 @@ export default function ShrinkChat() {
           )}
         </CardContent>
       </Card>
-
+    {messages.length > 0 && (
+      <div className="mt-4 flex justify-end">
+      <JournalResetButton
+        threadId={threadId}
+        onReset={() => {
+          setMessages([]);
+          setOnboardingStep('intro1'); // restart onboarding
+       }}    
+     />
+    </div>
+  )}
       <div className="flex gap-2 mt-4">
         <textarea
           ref={textareaRef}

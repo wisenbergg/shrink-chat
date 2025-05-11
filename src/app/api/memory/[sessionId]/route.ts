@@ -1,49 +1,62 @@
-// src/app/api/memory/[sessionId]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getMemoryForSession } from '@/lib/sessionMemory';
+import {
+  getMemoryForThreads,
+  deleteMemoryForThread
+} from '@/lib/sessionMemory';
 
 export const runtime = 'nodejs';
 
-// Zod schema for validation
 const ParamsSchema = z.object({
-  sessionId: z.string().min(1),
+  threadId: z.string().min(1)
 });
 
+// GET /api/memory/[threadId] — fetch memory
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ sessionId: string }> }
+  context: { params: { threadId: string } }
 ) {
-  // 1) Await the params promise to get a real object
-  const { sessionId } = await context.params;
+  const { threadId } = context.params;
 
-  // 2) Validate with Zod
-  const parsed = ParamsSchema.safeParse({ sessionId });
+  const parsed = ParamsSchema.safeParse({ threadId });
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Missing or invalid sessionId' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Missing or invalid threadId' }, { status: 400 });
   }
 
-  // 3) Load memory
   try {
-    const memory = await getMemoryForSession(sessionId);
-    return NextResponse.json({ sessionId, memory }, { status: 200 });
+    const memory = await getMemoryForThreads(threadId);
+    return NextResponse.json({ threadId, memory }, { status: 200 });
   } catch (err) {
-    console.error('Memory load failed:', err);
-    return NextResponse.json(
-      { error: 'Could not load memory' },
-      { status: 500 }
-    );
+    console.error('[Memory API] Error fetching memory:', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// Reject any non‑GET methods
+// DELETE /api/memory/[threadId] — erase memory
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { threadId: string } }
+) {
+  const { threadId } = context.params;
+
+  const parsed = ParamsSchema.safeParse({ threadId });
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Missing or invalid threadId' }, { status: 400 });
+  }
+
+  try {
+    await deleteMemoryForThread(threadId);
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (err) {
+    console.error('[Memory API] Failed to delete memory:', err);
+    return NextResponse.json({ error: 'Failed to delete memory' }, { status: 500 });
+  }
+}
+
+// POST not allowed
 export function POST() {
   return NextResponse.json(
     { error: 'Method Not Allowed' },
-    { status: 405, headers: { Allow: 'GET' } }
+    { status: 405, headers: { Allow: 'GET, DELETE' } }
   );
 }

@@ -15,6 +15,14 @@ export interface RecallEntry {
   tone_tags: string[];
 }
 
+export interface RetrievedChunk {
+  discipline: string;
+  topic: string;
+  source: string;
+  content: string;
+  score: number;
+}
+
 const CORPUS_FILES = [path.join(process.cwd(), 'data', 'therapy_corpus_embedded.json')];
 
 let corpusCache: RecallEntry[] | null = null;
@@ -48,18 +56,9 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 export async function fetchRecall(
   prompt: string,
-  predictedSignal: 'low' | 'medium' | 'high' | 'ambiguous',
-  inferredToneTags: string[]
-): Promise<{
-  recallUsed: boolean;
-  results: Array<{
-    discipline: string;
-    topic: string;
-    source: string;
-    content: string;
-    score: number;
-  }>;
-}> {
+  tone_tags: string[],
+  signal: 'low' | 'medium' | 'high' | 'ambiguous'
+): Promise<{ recallUsed: boolean; results: RetrievedChunk[] }> {
   if (!prompt.trim()) {
     console.warn('[RAG DEBUG] Empty or invalid prompt');
     return { recallUsed: false, results: [] };
@@ -93,7 +92,7 @@ export async function fetchRecall(
 
   scoredEntries.sort((a, b) => b.score - a.score);
 
-  const filteredRanked = filterAndRankRAG(scoredEntries, predictedSignal, inferredToneTags);
+  const filteredRanked = filterAndRankRAG(scoredEntries, signal, tone_tags);
 
   const topN = Number(process.env.RECALL_TOP_N) || 3;
   const topResults = filteredRanked.slice(0, topN).map(e => ({

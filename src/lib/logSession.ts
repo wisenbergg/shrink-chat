@@ -1,57 +1,32 @@
-// File: src/lib/logSession.ts
-import supabaseAdmin from '../utils/supabase/server';
+import fs from 'fs';
+import path from 'path';
 
-export interface SessionEntry {
-  session_id: string;
+interface LogEntry {
+  sessionId: string;
   prompt: string;
   response: string;
-  model?: string;
-  signal?: string;
+  tone_tags: string[];
+  signal: string;
+  rupture: boolean;
   recallUsed: boolean;
 }
 
-/**
- * Logs a session entry into session_logs with retries, and on final failure
- * writes the entry into session_logs_dead_letter table.
- */
-export async function logSessionEntry(entry: SessionEntry) {
-  const maxAttempts = 3;
-  let attempt = 0;
-  let lastError: string | null = null;
+const LOG_PATH = path.join(process.cwd(), 'data', 'logs');
 
-  while (attempt < maxAttempts) {
-    const { error } = await supabaseAdmin
-      .from('session_logs')
-      .insert({
-        session_id: entry.session_id,
-        prompt:      entry.prompt,
-        response:    entry.response,
-        model:       entry.model,
-        signal:      entry.signal,
-        recallused:  entry.recallUsed
-      });
+export async function logSessionEntry(entry: LogEntry) {
+  try {
+    if (!fs.existsSync(LOG_PATH)) fs.mkdirSync(LOG_PATH, { recursive: true });
 
-    if (!error) return; // successful write
+    const timestamp = new Date().toISOString();
+    const fileName = path.join(LOG_PATH, `${entry.sessionId}.log.jsonl`);
 
-    attempt++;
-    lastError = error.message;
-    console.error(`❌ Attempt ${attempt} failed to log session entry:`, error);
-    await new Promise(res => setTimeout(res, 100 * 2 ** (attempt - 1)));
-  }
-
-  // After retries, write to dead‑letter table
-  const { error: dlError } = await supabaseAdmin
-    .from('session_logs_dead_letter')
-    .insert({
-      session_id: entry.session_id,
-      prompt:      entry.prompt,
-      response:    entry.response,
-      model:       entry.model,
-      signal:      entry.signal,
-      recallused:  entry.recallUsed,
-      attempts:    maxAttempts,
-      last_error:  lastError ?? 'unknown error'
+    const line = JSON.stringify({
+      timestamp,
+      ...entry
     });
 
-  if (dlError) console.error('💀 Failed to write dead-letter entry:', dlError);
+    fs.appendFileSync(fileName, line + '\n', 'utf8');
+  } catch (err) {
+    console.error('❌ Failed to log session entry:', err);
+  }
 }

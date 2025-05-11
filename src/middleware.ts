@@ -1,24 +1,12 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-export function middleware(request: NextRequest) {
-  const password = process.env.NEXT_PUBLIC_SITE_PASSWORD;
-  const cookie = request.cookies.get('site_password')?.value;
-
-  // Allow access if cookie matches password
-  if (cookie === password) {
-    return NextResponse.next();
-  }
-
-  // Allow access to the login page itself
-  if (request.nextUrl.pathname === '/login') {
-    return NextResponse.next();
-  }
-
-  // Redirect to login page
-  return NextResponse.redirect(new URL('/login', request.url));
+export function toneDriftFilter(response: string): boolean {
+  const flagged = [
+    'i’m sorry you’re feeling that way',
+    'i understand that must be hard',
+    'it’s understandable to feel that way',
+    'you’re not alone in this',
+    'that’s totally valid',
+    'many people feel this way'
+  ];
+  const lower = response.toLowerCase();
+  return !flagged.some(f => lower.includes(f));
 }
-
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
-};
