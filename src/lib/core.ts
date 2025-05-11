@@ -119,3 +119,7 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
     model: process.env.CHAT_MODEL || 'gpt-4o',
   };
 }
+
+export function healthCheck() {
+  return { status: 'ok', timestamp: Date.now() };
+}
