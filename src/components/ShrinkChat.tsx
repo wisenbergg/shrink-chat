@@ -5,7 +5,7 @@ import { v4 as uuid } from "uuid";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { FeedbackForm } from "../components/FeedbackForm";
-import JournalResetButton from '@/components/JournalResetButton';
+import JournalResetButton from '../components/JournalResetButton';
 
 
 interface Message {
