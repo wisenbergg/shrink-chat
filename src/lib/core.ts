@@ -26,6 +26,10 @@ export interface PromptResult {
   model: string;
 }
 
+export function healthCheck() {
+  return { status: 'ok', timestamp: Date.now() };
+}
+
 function ruptureDetector(userText: string): boolean {
   const cues = [
     'you don’t get',
@@ -47,11 +51,12 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
   const tone_tags = await inferToneTagsFromText(prompt);
   const rupture = ruptureDetector(prompt);
 
-  const memory = sessionId
-    ? await getMemoryForSession(sessionId)
-    : threadIds
-    ? await getMemoryForThreads(threadIds[0])
-    : [];
+  // temporarily disabling unused memory until it's reintegrated into prompt flow
+  // const memory = sessionId
+  //   ? await getMemoryForSession(sessionId)
+  //   : threadIds
+  //   ? await getMemoryForThreads(threadIds[0])
+  //   : [];
 
   const threadId = threadIds?.[0] ?? sessionId ?? 'unknown';
 
@@ -101,16 +106,13 @@ Above all, prioritize emotional safety, trust, and presence over productivity or
 
   const response_text = completion.choices[0].message.content ?? '';
 
-  // ✍️ Log memory turns to Supabase
   await logMemoryTurn(threadId, 'user', prompt);
   await logMemoryTurn(threadId, 'assistant', response_text);
 
-  // 🚨 Drift filter
   if (!toneDriftFilter(response_text)) {
     console.warn('⚠️ Tone drift detected in response:', response_text);
   }
 
-  // 🧾 Session log entry
   await logSessionEntry({
     sessionId: sessionId ?? 'unknown',
     prompt,
