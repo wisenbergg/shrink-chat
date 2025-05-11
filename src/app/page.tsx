@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ShrinkChat from "../components/ShrinkChat";
 
@@ -10,6 +10,8 @@ export default function Page() {
   const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const auth = localStorage.getItem("authenticated");
     if (!auth) {
       router.push("/login");
