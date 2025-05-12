@@ -116,6 +116,8 @@ Now, continue in that same style.
     console.warn('⚠️ Tone drift detected:', response_text);
   }
 
+  
+
   return {
     response_text,
     recallUsed,
@@ -123,4 +125,8 @@ Now, continue in that same style.
     signal,
     model: process.env.CHAT_MODEL || 'gpt-4o',
   };
+}
+
+export function healthCheck() {
+  return { status: 'ok', timestamp: Date.now() };
 }

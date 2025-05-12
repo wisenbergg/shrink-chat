@@ -13,6 +13,11 @@ interface Message {
   text: string;
 }
 
+interface MemoryEntry {
+  role: 'assistant' | 'user' | string;
+  content: string;
+}
+
 type OnboardingStep = 'intro1' | 'intro2' | 'intro3' | 'invite' | 'done';
 
 export default function ShrinkChat() {
@@ -90,7 +95,8 @@ export default function ShrinkChat() {
     async function loadThreadHistory() {
        const res = await fetch(`/api/memory/${threadId}`);
        const data = await res.json();
-       const parsedMessages = (data.memory ?? []).map((m: any) => ({
+       const parsedMessages = (data.memory ?? []).map((m: MemoryEntry) => ({
+
          sender: m.role === 'assistant' ? 'engine' : 'user',
          text: m.content,
     }));
