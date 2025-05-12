@@ -61,12 +61,29 @@ Now, continue in that same style.
   const profileContext = userProfile
     ? `The user is ${userProfile.name ?? 'Anonymous'}, currently feeling ${userProfile.emotional_tone?.join(', ') || 'varied emotions'}.\n\n`
     : '';
-
+  const diversityBlock = `
+  Use varied reflective openings. For example:
+  • “It sounds like…”
+  • “I hear you saying…”
+  • “It seems…”
+  • “You appear to be…”
+  Choose one randomly each time and do not repeat.
+  `;
+    
+  const coreInstructions =
+    process.env.SYSTEM_PROMPT ??
+    `Your role is to hold quiet, supportive space for the user.
+  Offer meaningful, intentional questions — never filler or generic invitations.
+  When the user asks for advice, offer it gently and concisely.
+  When they show openness to reflection, you may invite deeper exploration at their pace.
+  Above all, avoid overwhelming or pressuring the user; prioritize emotional safety, trust, and presence over productivity or solutions.`;
+  
   const systemPrompt = [
-    fewShotBlock,               // injected primer
+    fewShotBlock,
+    diversityBlock,
     profileContext,
-    process.env.SYSTEM_PROMPT!, // your main instructions
-  ].join('');
+    coreInstructions
+    ].join('\n\n');
 
   // 4. Assemble messages
   const contextBlock = retrievedChunks
