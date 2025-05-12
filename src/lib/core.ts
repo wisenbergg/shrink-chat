@@ -61,7 +61,7 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
   const systemPrompt = [
     profileContext,
     process.env.SYSTEM_PROMPT ||
-      `Your role is to hold quiet, supportive space…never apologize unless it’s your fault.`,
+    "Your role is to hold quiet, supportive space for the user. Offer meaningful, intentional questions — never filler or generic invitations. When the user asks for advice, offer it gently and concisely. When they show openness to reflection, you may invite deeper exploration at their pace. Above all, avoid overwhelming or pressuring the user; prioritize emotional safety, trust, and presence over productivity or solutions."
   ].join('');
 
   // 4. Assemble messages
@@ -71,7 +71,7 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
       ? [
           {
             role: 'system' as const,
-            content: `You are grounded in these therapeutic references:\n\n${contextBlock}`,
+            content: `You are grounded in the following therapeutic references:\n\n${contextBlock}\n\nUse these insights naturally and conversationally. Do not quote definitions. Do not sound clinical. Do not use textbook phrasing. Weave them into your voice as if they were your own reflections.\n\nPrioritize the user’s unique experience. Let the information deepen your curiosity, not harden your answers.`
           },
         ]
       : []),
