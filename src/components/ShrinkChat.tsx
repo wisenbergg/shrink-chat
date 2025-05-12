@@ -89,10 +89,10 @@ export default function ShrinkChat() {
   useEffect(() => {
     async function loadThreadHistory() {
        const res = await fetch(`/api/memory/${threadId}`);
-       const { memory } = await res.json();
-       const parsedMessages = memory.map((m: { role: string; content: string }) => ({
-      sender: m.role === 'assistant' ? 'engine' : 'user',
-      text: m.content,
+       const data = await res.json();
+       const parsedMessages = (data.memory ?? []).map((m: any) => ({
+         sender: m.role === 'assistant' ? 'engine' : 'user',
+         text: m.content,
     }));
     setMessages(parsedMessages);
   }

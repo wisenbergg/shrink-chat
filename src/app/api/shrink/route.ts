@@ -10,6 +10,8 @@ interface PriorMessage {
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
+  console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
+
   try {
     // 1) Parse and validate
     const { prompt, threadId, threadIds, priorMessages = [] } = await request.json();

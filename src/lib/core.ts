@@ -1,4 +1,4 @@
-// src/lib/core.ts  (or wherever runShrinkEngine lives)
+// src/lib/core.ts
 
 import OpenAI from 'openai';
 import {
@@ -10,6 +10,8 @@ import { inferToneTagsFromText } from './toneInference';
 import { predictSignal } from './predictSignal';
 import { logSessionEntry } from './logSession';
 import { toneDriftFilter } from '../middleware';
+import { stylePrimers } from './stylePrimers';
+
 
 export interface PromptInput {
   sessionId?: string;
@@ -26,13 +28,22 @@ export interface PromptResult {
   model: string;
 }
 
+
 export async function runShrinkEngine(input: PromptInput): Promise<PromptResult> {
-  const {
-    sessionId = 'unknown',
-    prompt,
-    history = [],
-    threadIds = [],
-  } = input;
+  // Destructure inputs
+  const { sessionId = 'unknown', threadIds = [], prompt, history = [] } = input;
+
+  // 0. Pick a random style primer
+  const primer = stylePrimers[
+    Math.floor(Math.random() * stylePrimers.length)
+  ];
+  const fewShotBlock = `Here’s an example of how a warm, natural therapist speaks:
+
+${primer}
+
+Now, continue in that same style.
+
+`;
 
   // 1. Predict signal & tone on user prompt
   const signal = await predictSignal(prompt);
@@ -44,36 +55,32 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
     ? await fetchRecall(prompt, promptToneTags, signal)
     : { recallUsed: false, results: [] };
 
-  // 3. Build system prompt with user profile & RAG context
+  // 3. Build system prompt with primer + profile + core instructions
   const threadId = threadIds[0] || sessionId;
   const userProfile = await getUserProfile(threadId);
   const profileContext = userProfile
-    ? `\n\nThe user you're speaking with ${
-        userProfile.name ? `is named ${userProfile.name}` : `has not shared their name`
-      }. They’ve recently felt ${userProfile.emotional_tone?.join(', ') || 'varied emotions'}.\n`
+    ? `The user is ${userProfile.name ?? 'Anonymous'}, currently feeling ${userProfile.emotional_tone?.join(', ') || 'varied emotions'}.\n\n`
     : '';
 
+  const systemPrompt = [
+    fewShotBlock,               // injected primer
+    profileContext,
+    process.env.SYSTEM_PROMPT!, // your main instructions
+  ].join('');
+
+  // 4. Assemble messages
   const contextBlock = retrievedChunks
     .slice(0, 3)
     .map(c => `(${c.discipline}) ${c.topic}: ${c.content}`)
     .join('\n\n');
 
-  const systemPrompt = [
-    profileContext,
-    process.env.SYSTEM_PROMPT ||
-    "Your role is to hold quiet, supportive space for the user. Offer meaningful, intentional questions — never filler or generic invitations. When the user asks for advice, offer it gently and concisely. When they show openness to reflection, you may invite deeper exploration at their pace. Above all, avoid overwhelming or pressuring the user; prioritize emotional safety, trust, and presence over productivity or solutions."
-  ].join('');
-
-  // 4. Assemble messages
   const messages = [
     { role: 'system' as const, content: systemPrompt },
     ...(retrievedChunks.length
-      ? [
-          {
-            role: 'system' as const,
-            content: `You are grounded in the following therapeutic references:\n\n${contextBlock}\n\nUse these insights naturally and conversationally. Do not quote definitions. Do not sound clinical. Do not use textbook phrasing. Weave them into your voice as if they were your own reflections.\n\nPrioritize the user’s unique experience. Let the information deepen your curiosity, not harden your answers.`
-          },
-        ]
+      ? [{
+          role: 'system' as const,
+          content: `Grounded in these references:\n\n${contextBlock}`
+        }]
       : []),
     ...history,
     { role: 'user' as const, content: prompt },
@@ -94,8 +101,6 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
   // 7. Log memory and metrics
   await logMemoryTurn(threadId, 'user', prompt);
   await logMemoryTurn(threadId, 'assistant', response_text);
-
-  // Single-argument call to match signature
   await logSessionEntry({
     sessionId,
     role: 'assistant',
@@ -118,8 +123,4 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
     signal,
     model: process.env.CHAT_MODEL || 'gpt-4o',
   };
-}
-
-export function healthCheck() {
-  return { status: 'ok', timestamp: Date.now() };
 }
