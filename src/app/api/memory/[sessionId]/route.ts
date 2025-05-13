@@ -1,5 +1,7 @@
+// src/app/api/memory/[sessionId]/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getMemoryForSession } from '@/lib/sessionMemory';
+import { getMemoryForSession } from '@/lib/sessionMemory'; // adjust path if needed
 
 export const runtime = 'nodejs';
 
