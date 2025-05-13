@@ -8,12 +8,9 @@ const ParamsSchema = z.object({
 
 export const runtime = 'nodejs';
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { threadId: string } }
-) {
-  // ✏️ Await the params wrapper
-  const { threadId } = await context.params;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: NextRequest, context: any) {
+  const { threadId } = context.params;
 
   const parsed = ParamsSchema.safeParse({ threadId });
   if (!parsed.success) {
