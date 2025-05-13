@@ -1,13 +1,15 @@
-// src/app/api/memory/[sessionId]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getMemoryForSession } from '@/lib/sessionMemory'; // adjust path if needed
+import { getMemoryForSession } from '@/lib/sessionMemory';
 
-export const runtime = 'nodejs';
+type RouteContext = {
+  params: {
+    sessionId: string;
+  };
+};
 
 export async function GET(
   request: NextRequest,
-  context: { params: { sessionId: string } }
+  context: RouteContext
 ) {
   const { sessionId } = context.params;
 
