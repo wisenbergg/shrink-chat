@@ -1,34 +1,25 @@
-// src/app/api/profile/[threadId]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserProfile } from '@/lib/sessionMemory';
 import { z } from 'zod';
+import { getUserProfile } from '@/lib/sessionMemory';
 
 const ParamsSchema = z.object({
-  threadId: z.string().min(1),
+  threadId: z.string().min(1)
 });
 
+export const runtime = 'nodejs';
+
 export async function GET(
-  req: NextRequest,
-  { params }  // no explicit type here
+  request: NextRequest,
+  context: { params: { threadId: string } }
 ) {
-  const { threadId } = params;
+  // ✏️ Await the params wrapper
+  const { threadId } = await context.params;
+
   const parsed = ParamsSchema.safeParse({ threadId });
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Missing or invalid threadId' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Missing or invalid threadId' }, { status: 400 });
   }
 
-  try {
-    const profile = await getUserProfile(threadId);
-    return NextResponse.json({ profile });
-  } catch (err) {
-    console.error('Profile fetch error:', err);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
+  const profile = await getUserProfile(threadId);
+  return NextResponse.json({ profile });
 }

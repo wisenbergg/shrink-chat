@@ -63,100 +63,109 @@ export interface PromptResult {
 // ── Main engine function ─────────────────────────────────────────────────────
 
 export async function runShrinkEngine(input: PromptInput): Promise<PromptResult> {
-  // Destructure inputs
   const { sessionId = 'unknown', threadIds = [], prompt, history = [] } = input;
 
-  // 0. Few-shot style primer
-  const primer = stylePrimers[
-    Math.floor(Math.random() * stylePrimers.length)
-  ];
-  const fewShotBlock = `Here’s an example of how a warm, natural therapist speaks:
-
-${primer}
-
-Now, continue in that same style.
-`;
-
-  // 1. Signal & tone
+  // 1. Predict signal & log
   const signal = await predictSignal(prompt);
+  console.log('🩺 Signal label:', signal);
+
+  // 2. Infer tone tags
   const promptToneTags = await inferToneTagsFromText(prompt);
 
-  // 2. RAG retrieval
+  // 3. RAG retrieval & debug
+  console.log('Calling fetchRecall with:', { prompt, tone_tags: promptToneTags, signal });
   const recallEnabled = signal !== 'low' && promptToneTags.length > 0;
   const { recallUsed, results: retrievedChunks } = recallEnabled
     ? await fetchRecall(prompt, promptToneTags, signal)
     : { recallUsed: false, results: [] };
+  console.log('⛓️ RAG enabled:', recallEnabled, 'recallUsed:', recallUsed);
+  if (process.env.DEBUG_RAG === 'true') {
+    console.log('🔎 Retrieved chunks:', retrievedChunks);
+  }
 
-  // 3a. Intent-based strategy
+  // 4. Few-shot style primer
+  const primer = stylePrimers[
+    Math.floor(Math.random() * stylePrimers.length)
+  ];
+  const fewShotBlock = `Here’s how a warm, natural therapist might speak:
+
+  ${primer}
+  
+  Continue in that same natural, unquoted style.
+  `;
+
+  // 5. Intent-based strategy
   const intent = classifyIntent(prompt);
   const strategyBlock = strategyPrompts[intent] ?? strategyPrompts.casual;
 
-  // 3b. Diversity guidelines
+  // 6. Diversity guidelines
   const diversityBlock = `
 Use varied reflective openings. For example:
-• “I hear you saying…”
-• “It seems like…”
-• “You appear to be…”
-• “It feels like…”
+• I hear you saying…
+• It seems like…
+• You appear to be…
+• It feels like…
 Choose one randomly each time and do not repeat.
 `;
 
-  // 3c. Profile context
+  // 7. Profile context
   const threadId = threadIds[0] || sessionId;
   const userProfile = await getUserProfile(threadId);
   const profileContext = userProfile
     ? `The user is ${userProfile.name ?? 'Anonymous'}, currently feeling ${userProfile.emotional_tone?.join(', ') || 'varied emotions'}.\n\n`
     : '';
 
-  // 3d. Core instructions
+  // 8. Core instructions
   const coreInstructions =
     process.env.SYSTEM_PROMPT ??
     `Your role is to hold quiet, supportive space for the user.
 Offer meaningful, intentional questions — never filler or generic invitations.
 When the user asks for advice, offer it gently and concisely.
 When they show openness to reflection, you may invite deeper exploration at their pace.
-Above all, avoid overwhelming or pressuring the user; prioritize emotional safety, trust, and presence over productivity or solutions.`;
+Above all, prioritize emotional safety, trust, and presence over productivity or solutions.`;
 
-  // 3e. Assemble the system prompt
-  const systemPrompt = [
-    fewShotBlock,
-    diversityBlock,
-    strategyBlock,    // new injection
-    profileContext,
-    coreInstructions
-  ].join('\n\n');
-
-  // 4. Build message array
+  // 9. Assemble the system prompt (context first)
   const contextBlock = retrievedChunks
     .slice(0, 3)
     .map(c => `(${c.discipline}) ${c.topic}: ${c.content}`)
     .join('\n\n');
 
-  const messages = [
+  const shouldInjectRAG =
+    recallUsed &&
+    signal === 'high' &&
+    promptToneTags.includes('info');
+
+  const systemPrompt = [
+    fewShotBlock,
+    diversityBlock,
+    strategyBlock,
+    profileContext,
+    coreInstructions,
+    // ← only append RAG if both conditions are met
+    shouldInjectRAG && contextBlock
+      ? `\n\n—\n\nHere are some notes for reference:\n\n${contextBlock}`
+      : ''
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  // 10. Call the LLM
+  const model = process.env.CHAT_MODEL || 'gpt-4o';
+  console.log('🤖 Using model:', model);
+
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const completion = await openai.chat.completions.create({ model, messages: [
     { role: 'system' as const, content: systemPrompt },
-    ...(retrievedChunks.length
-      ? [{
-          role: 'system' as const,
-          content: `Grounded in these references:\n\n${contextBlock}`
-        }]
-      : []),
     ...history,
     { role: 'user' as const, content: prompt },
-  ];
-
-  // 5. Query the LLM
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const completion = await openai.chat.completions.create({
-    model: process.env.CHAT_MODEL || 'gpt-4o',
-    messages,
-  });
+  ]});
   const response_text = completion.choices[0].message.content ?? '';
 
-  // 6. Apology count & tone tagging
+  // 11. Apology count & tone tagging
   const apologyCount = (response_text.match(/I’m sorry|sorry/gi) || []).length;
   const responseToneTags = await inferToneTagsFromText(response_text);
 
-  // 7. Log memory & session metrics
+  // 12. Log memory & metrics
   await logMemoryTurn(threadId, 'user', prompt);
   await logMemoryTurn(threadId, 'assistant', response_text);
   await logSessionEntry({
@@ -169,23 +178,36 @@ Above all, avoid overwhelming or pressuring the user; prioritize emotional safet
     recallUsed,
   });
 
-  // 8. Tone drift warning
+  // 13. Tone drift warning
   if (!toneDriftFilter(response_text)) {
     console.warn('⚠️ Tone drift detected:', response_text);
   }
 
-  // 9. Return final result
+  // 14. Return the result
   return {
     response_text,
     recallUsed,
     tone_tags: responseToneTags,
     signal,
-    model: process.env.CHAT_MODEL || 'gpt-4o',
+    model,
   };
 }
 
-// ── Health check export ──────────────────────────────────────────────────────
+// ── Health check ──────────────────────────────────────────────────────────────
 
 export function healthCheck() {
   return { status: 'ok', timestamp: Date.now() };
+}
+
+// ── Test helpers ──────────────────────────────────────────────────────────────
+
+export function testPrompt(prompt: string) {
+  return runShrinkEngine({ prompt, history: [] });
+}
+
+export function testPromptWithHistory(
+  prompt: string,
+  history: Array<{ role: 'user' | 'assistant'; content: string }>
+) {
+  return runShrinkEngine({ prompt, history });
 }

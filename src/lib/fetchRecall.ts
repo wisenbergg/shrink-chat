@@ -1,3 +1,5 @@
+console.log('DEBUG_RAG=', process.env.DEBUG_RAG);
+
 import { filterAndRankRAG } from './filterUtils';
 import fs from 'fs';
 import path from 'path';
@@ -23,12 +25,16 @@ export interface RetrievedChunk {
   score: number;
 }
 
-const CORPUS_FILES = [path.join(process.cwd(), 'data', 'therapy_corpus_embedded.json')];
+const CORPUS_FILES = [
+  path.join(process.cwd(), 'data', 'therapy_corpus_embedded.json'),
+];
 
+// Cache the loaded corpus in memory
 let corpusCache: RecallEntry[] | null = null;
 function loadCorpus(): RecallEntry[] {
   if (corpusCache) return corpusCache;
   const all: RecallEntry[] = [];
+
   for (const filePath of CORPUS_FILES) {
     try {
       const raw = fs.readFileSync(filePath, 'utf-8');
@@ -39,6 +45,7 @@ function loadCorpus(): RecallEntry[] {
       console.warn(`[RAG DEBUG] Could not load corpus file: ${filePath}`, err);
     }
   }
+
   corpusCache = all;
   return all;
 }
@@ -59,57 +66,66 @@ export async function fetchRecall(
   tone_tags: string[],
   signal: 'low' | 'medium' | 'high' | 'ambiguous'
 ): Promise<{ recallUsed: boolean; results: RetrievedChunk[] }> {
+  // 0. Guard empty prompt
   if (!prompt.trim()) {
     console.warn('[RAG DEBUG] Empty or invalid prompt');
     return { recallUsed: false, results: [] };
   }
 
+  // 1. Embed the user prompt
   let inputEmbedding: number[];
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const res = await openai.embeddings.create({
-      model: process.env.EMBED_MODEL || 'text-embedding-3-small',
+      model: process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
       input: prompt,
     });
     inputEmbedding = res.data[0].embedding;
-    console.log('[RAG DEBUG] Input embedding generated, length:', inputEmbedding.length);
+
+    if (process.env.DEBUG_RAG === 'true') {
+      console.log('[RAG DEBUG] Generated input embedding, length:', inputEmbedding.length);
+    }
   } catch (err) {
     console.error('[RAG DEBUG] fetchRecall embedding error:', err);
     return { recallUsed: false, results: [] };
   }
 
+  // 2. Load and score against corpus
   const corpus = loadCorpus();
   if (corpus.length === 0) {
-    console.warn('[RAG DEBUG] Corpus is empty — no embeddings loaded.');
+    console.warn('[RAG DEBUG] No corpus entries loaded');
     return { recallUsed: false, results: [] };
   }
 
-  console.log('[RAG DEBUG] Calculating similarity scores...');
+  if (process.env.DEBUG_RAG === 'true') {
+    console.log('[RAG DEBUG] Calculating cosine similarities...');
+  }
   const scoredEntries = corpus.map(entry => ({
     ...entry,
     score: cosineSimilarity(inputEmbedding, entry.embedding),
   }));
-
   scoredEntries.sort((a, b) => b.score - a.score);
 
+  // 3. Filter & rank via your custom logic
   const filteredRanked = filterAndRankRAG(scoredEntries, signal, tone_tags);
 
+  // 4. Take the top N
   const topN = Number(process.env.RECALL_TOP_N) || 3;
-  const topResults = filteredRanked.slice(0, topN).map(e => ({
-    discipline: e.discipline || '',
-    topic: e.topic || '',
-    source: e.source || '',
-    content: e.content || '',
-    score: e.score ?? 0,
+  const topResults = filteredRanked.slice(0, topN).map(entry => ({
+    discipline: entry.discipline,
+    topic: entry.topic,
+    source: entry.source,
+    content: entry.content,
+    score: entry.score ?? 0,
   }));
 
-  console.log(`[RAG DEBUG] Top results after filtering and slice (${topN}):`, topResults.length);
-  topResults.forEach((e, idx) => {
-    console.log(`[RAG DEBUG] Passed ${idx + 1}: ${e.topic} (${e.discipline}) — Score: ${e.score}`);
-  });
+  if (process.env.DEBUG_RAG === 'true') {
+    console.log(`[RAG DEBUG] Top ${topN} chunks:`, topResults);
+  }
 
   return {
     recallUsed: topResults.length > 0,
     results: topResults,
   };
 }
+

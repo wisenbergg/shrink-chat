@@ -1,13 +1,15 @@
-// src/app/api/memory/[sessionId]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getMemoryForSession } from '@/lib/sessionMemory';
 
+export const runtime = 'nodejs';
+
 export async function GET(
   request: NextRequest,
-  { params }         // ← no explicit type here
+  context: { params: { sessionId: string } }
 ) {
-  const sessionId = params.sessionId;
+  // ✏️ Await the params wrapper
+  const { sessionId } = await context.params;
+
   const memory = await getMemoryForSession(sessionId);
-  return NextResponse.json(memory);
+  return NextResponse.json({ memory });
 }

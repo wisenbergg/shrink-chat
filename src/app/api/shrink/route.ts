@@ -1,3 +1,6 @@
+console.log('> env OPENAI_API_KEY =', process.env.OPENAI_API_KEY);
+
+
 import { NextRequest, NextResponse } from 'next/server';
 import { runShrinkEngine } from '@/lib/core';
 import { logChat } from '@/lib/logChat';

@@ -7,8 +7,12 @@ export interface ScoredEntry {
   content: string;
   score: number;
   signal_label: 'low' | 'medium' | 'high' | 'ambiguous';
-  tone_tags: string[];
+  tone_tags?: string[];        // make tone_tags optional
 }
+
+// Adjust these boost values as needed
+const SIGNAL_BOOST = 0.1;
+const TONE_BOOST = 0.05;
 
 /**
  * Soft-boosted filtering & ranking:
@@ -21,21 +25,34 @@ export function filterAndRankRAG(
   predictedSignal: 'low' | 'medium' | 'high' | 'ambiguous',
   inferredToneTags: string[]
 ): ScoredEntry[] {
-  const SIGNAL_BOOST = 0.15;
-  const TONE_BOOST   = 0.10;
-
-  const boosted = entries.map(e => {
-    let boost = 0;
-    if (predictedSignal !== 'ambiguous' && e.signal_label === predictedSignal) {
-      boost += SIGNAL_BOOST;
+  // 1. Filter out zero-or-negative scores and mismatched signals (unless ambiguous)
+  const filtered = entries.filter(e => {
+    if (e.score <= 0) return false;
+    if (predictedSignal !== 'ambiguous' && e.signal_label !== predictedSignal) {
+      return false;
     }
-    if (inferredToneTags.some(tag => e.tone_tags.includes(tag))) {
-      boost += TONE_BOOST;
-    }
-    return { ...e, score: e.score + boost };
+    return true;
   });
 
-  // Sort descending
+  // 2. Apply boosts
+  const boosted = filtered.map(e => {
+    let boost = 0;
+    // boost for matching signal
+    if (e.signal_label === predictedSignal) {
+      boost += SIGNAL_BOOST;
+    }
+    // boost for any overlapping tone tag
+    if (inferredToneTags.some(tag => (e.tone_tags ?? []).includes(tag))) {
+      boost += TONE_BOOST;
+    }
+    return {
+      ...e,
+      score: e.score + boost
+    };
+  });
+
+  // 3. Sort descending by boosted score
   boosted.sort((a, b) => b.score - a.score);
+
   return boosted;
 }
