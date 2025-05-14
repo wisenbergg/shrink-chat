@@ -1,3 +1,5 @@
+// src/app/api/shrink/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { runShrinkEngine } from '@/lib/core';
 import { logChat } from '@/lib/logChat';
@@ -10,7 +12,15 @@ interface PriorMessage {
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
-  console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY);
+  // Debug: log env at route level
+  console.log('ROUTE ENV JSON:', JSON.stringify(process.env.OPENAI_API_KEY));
+  console.log(
+    'ROUTE ENV CODES (first 20):',
+    process.env.OPENAI_API_KEY
+      ?.slice(0, 20)
+      .split('')
+      .map(c => c.charCodeAt(0))
+  );
 
   try {
     // 1) Parse and validate
@@ -34,8 +44,8 @@ export async function POST(request: NextRequest) {
       prompt,
       history: (priorMessages as PriorMessage[]).map((m) => ({
         role: m.sender,
-        content: m.text
-      }))
+        content: m.text,
+      })),
     });
 
     const text = result.response_text;
@@ -49,11 +59,10 @@ export async function POST(request: NextRequest) {
         response_text: text,
         signal: result.signal,
         tone_tags: result.tone_tags,
-        recallUsed: result.recallUsed
+        recallUsed: result.recallUsed,
       },
       { status: 200 }
     );
-
   } catch (err) {
     console.error('Error in /api/shrink POST:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

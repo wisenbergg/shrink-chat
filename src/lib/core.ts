@@ -10,14 +10,13 @@ import { toneDriftFilter } from '../middleware';
 import { friendlyPrimers } from '@/lib/stylePrimers/friendly';
 import { professionalPrimers } from '@/lib/stylePrimers/professional';
 
-// ---- Global stem cache typing (avoids `any`) --------------------
+// ---- Global stem cache typing (avoids `any`) -------------------------
 declare global {
   // eslint-disable-next-line no-var
   var __lastStem: Record<string, string> | undefined;
 }
 
-/* ── Intent classifier ─────────────────────────────────────────── */
-
+/* ── Intent classifier ──────────────────────────────────────────────── */
 function classifyIntent(text: string): 'readiness' | 'emotion' | 'info' | 'casual' {
   const lower = text.toLowerCase();
   if (/(i['’]?m ready|let'?s start)/.test(lower)) return 'readiness';
@@ -26,8 +25,7 @@ function classifyIntent(text: string): 'readiness' | 'emotion' | 'info' | 'casua
   return 'casual';
 }
 
-/* ── Simple keyword lens detector (stop‑gap) ───────────────────── */
-
+/* ── Simple keyword lens detector (stop-gap) ───────────────────────── */
 function detectLens(text: string): string {
   const lower = text.toLowerCase();
   if (/(angry|furious|pissed)/.test(lower)) return 'anger';
@@ -36,16 +34,16 @@ function detectLens(text: string): string {
   return 'neutral';
 }
 
-/* ── Strategy prompts (unchanged) ──────────────────────────────── */
+/* ── Strategy prompts (unchanged) ─────────────────────────────────── */
+const strategyPrompts: Record<string, string> = {
+  readiness: `
+When the user says they’re ready, first **acknowledge** it, then invite them to choose a focus.
+For example:
+> “Alright, let’s get started. Anything top-of-mind for you at the moment?”
+`
+};
 
-const strategyPrompts: Record<string, string> = { readiness: `
-  When the user says they’re ready, first **acknowledge** it, then invite them to choose a focus.
-  For example:
-  > “Alright, let’s get started. Anything top‑of‑mind for you at the moment?”
-  `, };
-
-/* ── Prompt I/O interfaces ─────────────────────────────────────── */
-
+/* ── Prompt I/O interfaces ─────────────────────────────────────────── */
 export interface PromptInput {
   sessionId?: string;
   threadIds?: string[];
@@ -61,43 +59,47 @@ export interface PromptResult {
   model: string;
 }
 
-/* ── Main Shrink Engine runner ─────────────────────────────────── */
-
+/* ── Main Shrink Engine runner ─────────────────────────────────────── */
 export async function runShrinkEngine(input: PromptInput): Promise<PromptResult> {
-  const { sessionId = 'unknown', threadIds = [], prompt, history = [] } = input;
+  // Debug: log raw env and character codes at runtime
+  console.log('CORE ENV JSON:', JSON.stringify(process.env.OPENAI_API_KEY));
+  console.log(
+    'CORE ENV CODES:',
+    process.env.OPENAI_API_KEY
+      ?.split('')
+      .map(ch => ch.charCodeAt(0))
+  );
+  console.log('API Key length:', process.env.OPENAI_API_KEY?.length);
 
-  /* Declare threadId early (used by reflection stem helper) */
+  const { sessionId = 'unknown', threadIds = [], prompt, history = [] } = input;
   const threadId = threadIds[0] || sessionId;
 
-  /* 1. Signal detection ---------------------------------------------------- */
+  /* 1. Signal detection -------------------------------------------------- */
   const signal = await predictSignal(prompt);
 
-  /* 2. Tone‑tag inference -------------------------------------------------- */
+  /* 2. Tone-tag inference ------------------------------------------------ */
   const promptToneTags = await inferToneTagsFromText(prompt);
 
-  /* 3. RAG retrieval ------------------------------------------------------- */
+  /* 3. RAG retrieval ----------------------------------------------------- */
   const recallEnabled = signal !== 'low' && promptToneTags.length > 0;
   const { recallUsed, results: retrievedChunks } = recallEnabled
     ? await fetchRecall(prompt, promptToneTags, signal)
     : { recallUsed: false, results: [] };
 
-  /* 4. Style primer pool selection ---------------------------------------- */
+  /* 4. Style primer pool selection --------------------------------------- */
   const primerPool =
     signal === 'high' || ['danger', 'self-harm'].includes(detectLens(prompt))
       ? professionalPrimers
       : friendlyPrimers;
-
   const primer = primerPool[Math.floor(Math.random() * primerPool.length)];
   const fewShotBlock = `Here’s how a warm, natural therapist might speak:\n\n${primer}\n\nContinue in that same natural, unquoted style.`;
 
-  /* 5. Intent‑based strategy ---------------------------------------------- */
+  /* 5. Intent-based strategy --------------------------------------------- */
   const intent = classifyIntent(prompt);
   const strategyBlock = strategyPrompts[intent] ?? strategyPrompts.casual;
 
-
-  /* 6. Diversity guideline block ------------------------------------------ */
+  /* 6. Diversity guideline block ----------------------------------------- */
   const reflectionStems = [ /* 15 stems list … */ ];
-
   function nextReflectionStem(sid: string): string {
     const cache = globalThis.__lastStem ?? {};
     const lastUsed = cache[sid] ?? '';
@@ -109,33 +111,30 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
     globalThis.__lastStem = cache;
     return candidate;
   }
-  
-
   const diversityBlock = `
 Use this reflective opening **once per assistant turn**, rotating without repeating the previous stem in the same session:
 
 ${nextReflectionStem(threadId)}
 `;
 
-  /* 7. Profile context ----------------------------------------------------- */
+  /* 7. Profile context -------------------------------------------------- */
   const userProfile = await getUserProfile(threadId);
   const profileContext = userProfile
     ? `The user is ${userProfile.name ?? 'Anonymous'}, currently feeling ${userProfile.emotional_tone?.join(', ') || 'varied emotions'}.\n\n`
     : '';
 
-  /* 8. Core system instructions ------------------------------------------- */
+  /* 8. Core system instructions ------------------------------------------ */
   const coreInstructions = process.env.SYSTEM_PROMPT ?? `Your role is to hold quiet, supportive space …`;
 
-  /* 9. Contextual RAG block ------------------------------------------------ */
+  /* 9. Contextual RAG block --------------------------------------------- */
   const contextBlock = retrievedChunks
     .slice(0, 3)
     .map(c => `(${c.discipline}) ${c.topic}: ${c.content}`)
     .join('\n\n');
-
   const shouldInjectRAG =
     recallUsed && signal === 'high' && promptToneTags.includes('info');
 
-  /* 10. Assemble final system prompt -------------------------------------- */
+  /* 10. Assemble final system prompt ------------------------------------- */
   const systemPrompt = [
     fewShotBlock,
     diversityBlock,
@@ -149,7 +148,7 @@ ${nextReflectionStem(threadId)}
     .filter(Boolean)
     .join('\n\n');
 
-  /* 11. Call OpenAI -------------------------------------------------------- */
+  /* 11. Call OpenAI ------------------------------------------------------- */
   const model = process.env.CHAT_MODEL || 'gpt-4o';
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const completion = await openai.chat.completions.create({
@@ -162,7 +161,7 @@ ${nextReflectionStem(threadId)}
   });
   const response_text = completion.choices[0].message.content ?? '';
 
-  /* 12. Post‑processing & logging ----------------------------------------- */
+  /* 12. Post-processing & logging ---------------------------------------- */
   const apologyCount = (response_text.match(/I’m sorry|sorry/gi) || []).length;
   const responseToneTags = await inferToneTagsFromText(response_text);
 
@@ -191,7 +190,7 @@ ${nextReflectionStem(threadId)}
   };
 }
 
-/* Health check, test helpers unchanged … */
+/* Health check helper */
 export function healthCheck() {
   return { status: 'ok' };
 }

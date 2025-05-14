@@ -8,22 +8,35 @@ export async function logChat(entry: {
   role: 'user' | 'assistant';
   content: string;
 }) {
-  const { error } = await supabaseAdmin
+  // 1) Ensure there is a threads row with this id
+  const { error: threadError } = await supabaseAdmin
+    .from('threads')
+    .upsert(
+      {
+        id: entry.threadId,
+        // — if you also want to fill session_id, uncomment the next line:
+        // session_id: entry.threadId,
+      },
+      { onConflict: 'id' }
+    );
+
+  if (threadError) {
+    console.error('❌ supabase upsert thread error:', threadError);
+    throw new Error('logChat failed: unable to create thread record');
+  }
+
+  // 2) Insert the new message into `messages`
+  const { error: msgError } = await supabaseAdmin
     .from('messages')
     .insert({
       thread_id: entry.threadId,
-      turn:       entry.turn,
-      role:       entry.role,
-      content:    entry.content
+      turn: entry.turn,
+      role: entry.role,
+      content: entry.content,
     });
 
-  if (error) {
-    console.error('❌ supabase logChat error:', {
-      code:    error.code,
-      message: error.message,
-      details: error.details,
-      hint:    error.hint
-    });
-    throw new Error('logChat failed: ' + error.message);
+  if (msgError) {
+    console.error('❌ supabase logChat error:', msgError);
+    throw new Error(`logChat failed: ${msgError.message}`);
   }
 }
