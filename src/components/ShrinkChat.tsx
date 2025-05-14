@@ -69,9 +69,9 @@ export default function ShrinkChat() {
 
   useEffect(() => {
     if (onboardingStep === 'intro1') showMessageWithDelay("Hey, I’m really glad you’re here.", 'intro2');
-    if (onboardingStep === 'intro2') showMessageWithDelay("This space is now yours — A safe place to share your thoughts, feelings, and experiences in total privacy", 'intro3');
+    if (onboardingStep === 'intro2') showMessageWithDelay("This space is now yours — A safe place to share your thoughts, feelings, and experiences in total privacy.", 'intro3');
     if (onboardingStep === 'intro3') showMessageWithDelay("If you're feeling up to it, I’d love to start by getting to know you — It can be something small like your name or if there's anything top of mind, we can jump ahead and tackle it together. Remember, it's just us. nothing you say will ever leave your computer.", 'invite');
-    if (onboardingStep === 'invite') showMessageWithDelay("As soon as you're ready to share just drop your thoughts in down below, I'll be here to help when you do", 'done');
+    if (onboardingStep === 'invite') showMessageWithDelay("As soon as you're ready to share just drop your thoughts in down below, I'll be here to help when you do.", 'done');
   }, [onboardingStep]);
 
   const showMessageWithDelay = (text: string, nextStep: OnboardingStep) => {
