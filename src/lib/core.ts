@@ -21,7 +21,7 @@ function getClient() {
   return new OpenAI({ apiKey });
 }
 
-declare global { var __lastStem: Record<string, string> | undefined; }
+declare global { let __lastStem: Record<string, string> | undefined; }
 
 function classifyIntent(text: string): 'readiness' | 'emotion' | 'info' | 'casual' {
   const lower = text.toLowerCase();
@@ -117,7 +117,8 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
   await logMemoryTurn(threadId, 'user', prompt);
   await logMemoryTurn(threadId, 'assistant', response_text);
   await logSessionEntry({ sessionId, role: 'assistant', content: response_text, signal, toneTags: responseToneTags, recallUsed });
-
+ 
+  if (!toneDriftFilter(response_text)) console.warn('⚠️ Tone drift detected');
   return { response_text, recallUsed, tone_tags: responseToneTags, signal, model };
 }
 
