@@ -11,7 +11,7 @@ export interface ScoredEntry {
 }
 
 // Adjust these boost values as needed
-const SIGNAL_BOOST = 0.5;
+const SIGNAL_BOOST = 0.1;
 const TONE_BOOST = 0.05;
 
 /**

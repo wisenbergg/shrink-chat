@@ -36,6 +36,12 @@ src/lib/testFetchRecall.*
 # NOTE: this is a temporary solution until we have a better way to handle session logs
 data/session_log.jsonl
 
+# ignore all our generated data dumps & fine-tune sources
+data/logs/
+data/*.{json,jsonl}
+data/ft_source/
+data/casual_source/
+
 
 # debug
 npm-debug.log*

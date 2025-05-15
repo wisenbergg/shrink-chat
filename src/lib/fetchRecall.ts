@@ -26,7 +26,7 @@ export interface RetrievedChunk {
 }
 
 const CORPUS_FILES = [
-  path.join(process.cwd(), 'data', 'therapy_corpus_embedded.json'),
+  path.join(process.cwd(), 'data', 'therapy_corpus_embedded_expanded.json'),
 ];
 
 // Cache the loaded corpus in memory

@@ -100,7 +100,11 @@ export async function getMemoryForThreads(
     ): Promise<void> {
       const { error } = await supabase
         .from('messages')
-        .insert([{ thread_id: threadId, role, content }]);
+        .insert([{
+          thread_id: threadId,
+          role,
+          content        // ← turn used to live here; just drop it entirely
+        }]);
     
       if (error) {
         console.error(`[Supabase] logMemoryTurn failed:`, error);
