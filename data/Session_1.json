@@ -1,0 +1,1568 @@
+
+    [
+        {
+          "speaker": "client_1",
+          "text": "I told you.",
+          "emotional_tone": [
+            "defensive"
+          ],
+          "conversational_function": [
+            "assertion"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Told me what?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "That you'd be sorry you ever encouraged me to cry here.",
+          "emotional_tone": [
+            "resentful",
+            "sad"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "I'm not sorry at all.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "boundary-setting"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "You didn't expect it to be like this, I bet.",
+          "emotional_tone": [
+            "defensive"
+          ],
+          "conversational_function": [
+            "projection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Like what?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "You know what? It's disappointing. I thought I'd feel better, relieved. I thought it'd be a lot more fun.",
+          "emotional_tone": [
+            "sad",
+            "confused"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "And it isn't?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "No, it's horrible. I don't know if I'm able to talk today, Paul. I shouldn't have come. I should have just. I should have just called it off. I'm sorry.",
+          "emotional_tone": [
+            "anxious",
+            "ashamed"
+          ],
+          "conversational_function": [
+            "self-blame"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "support"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Are you all right?",
+          "emotional_tone": [
+            "concerned"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "assess",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Yeah.",
+          "emotional_tone": [
+            "withdrawn"
+          ],
+          "conversational_function": [
+            "avoidance"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Sit down. Sit.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "boundary-setting"
+          ],
+          "desired_model_behavior": [
+            "guide"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "You know, I've been sitting out in the park about four hours.",
+          "emotional_tone": [
+            "anxious"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Out here?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Yeah. I wanted to call it off, the session, but... I wasn't sure I'd be able to make it home alone. I took a cab here. My car's at home. God, at least I think it is. Yeah yeah, my car's at home.",
+          "emotional_tone": [
+            "anxious"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "support"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "My god, it's freezing. I came this close to knocking on your door and asking for a sweater.",
+          "emotional_tone": [
+            "anxious"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "When was that?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I don't know. Maybe 5:00 or 6:00, I can't remember. It was still dark. I waited for the sun to come up. I've never waited this long for a sunrise, except maybe on a camping trip in fifth grade.",
+          "emotional_tone": [
+            "sad",
+            "anxious"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Thank you. You know what I did?",
+          "emotional_tone": [
+            "sad"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "What?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "encourage elaboration"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "It felt like forever for one minute to turn into the next. I thought to myself, \"how stupid is this, dying on the street like roadkill outside your therapist's office?\" I'm sorry, Paul. I should have called it off. I shouldn't have come.",
+          "emotional_tone": [
+            "ashamed",
+            "anxious"
+          ],
+          "conversational_function": [
+            "self-blame",
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "You should have come here. What happened last night?",
+          "emotional_tone": [
+            "concerned"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore",
+            "support"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Well, what didn't happen? The long version or the bottom line? Because the bottom line is very simple. My life is over.",
+          "emotional_tone": [
+            "despair"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Then, you'd better tell me the long version.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "encouragement"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I left Andrew. We had a big blowout. Screaming, crying. The works. And at some point I... I called Alona and we went out for a drink. We had a few drinks.",
+          "emotional_tone": [
+            "angry",
+            "sad"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Listen, I'm not here. I'm... I'm so totally not here. You are very much here, Laura. No, it's not me that's here. Believe me, you'd be shocked to know the person that's sitting here. I did some... I did some terrible things last night. I feel sick.",
+          "emotional_tone": [
+            "ashamed",
+            "anxious"
+          ],
+          "conversational_function": [
+            "confession",
+            "avoidance"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "But I don't wanna throw up. It doesn't matter, it's no big deal. What do you mean? It's vomit. I'm not gonna vomit all over your rug.",
+          "emotional_tone": [
+            "anxious"
+          ],
+          "conversational_function": [
+            "avoidance"
+          ],
+          "desired_model_behavior": [
+            "contain",
+            "reassure"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "It's a cheap rug, Laura. Let's talk about what's really going on here.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "boundary-setting"
+          ],
+          "desired_model_behavior": [
+            "guide"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "It's Andrew. He knows I'm here at this time. Why is he calling me here? Maybe he's worried. You were out of the house all night. Yeah, right. If he really cared, he wouldn't have started with his shit.",
+          "emotional_tone": [
+            "angry"
+          ],
+          "conversational_function": [
+            "projection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Start what? At the club, this guy. Oh my god. He had corduroy pants on, Preppy Sweater. A republican, probably.",
+          "emotional_tone": [
+            "disdainful",
+            "humorous"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "You know can I just step out for a second and let him know I'm here I mean, I can't concentrate with this shit. Just a sec. Laura, the call can wait. Andrew gave me an ultimatum, either we get married or we split. He said he wants an answer in a day or two at the most or else he's out.",
+          "emotional_tone": [
+            "frustrated",
+            "sad"
+          ],
+          "conversational_function": [
+            "confession",
+            "rupture"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "He said he can't take it anymore, that he loves me, that he doesn't believe I love him. Not for real, that it's been two years already on and off. Blah blah blah. I don't know why, all of a sudden he just started ranting and raving. We've talked about this stuff before.",
+          "emotional_tone": [
+            "angry",
+            "defensive"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "But it was all in theory, if we stayed together. If. And suddenly, out of the blue, I... I can't even remember what we were doing. We were watching TV. All of a sudden he just gets off the couch and grabs the remote and turns off the TV. And he turns to me and he has tears in his eyes and he says, \"that's it. I can't take it anymore.\"",
+          "emotional_tone": [
+            "confused",
+            "anxious"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "So out of line. Promised he'd lay off the subject for a while and all of a sudden he's on this crying bullshit. He actually burst out crying. I've never seen him like that before. And to tell you the truth, it really scared me. No, it made me angry.",
+          "emotional_tone": [
+            "angry",
+            "confused"
+          ],
+          "conversational_function": [
+            "projection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Why?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Because he's trying to manipulate me with these cheap chick tricks. Maybe he thought he would break my heart or something, appeal to my... Shit, you know, forget it. I don't know. I threw a tantrum like a three-year-old. Screamed, cried, told him to fuck off.",
+          "emotional_tone": [
+            "angry",
+            "defensive"
+          ],
+          "conversational_function": [
+            "rupture"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I told him he was a little piece of shit for doing this to me when he knows that I'm working double shifts at the hospital this week. I slammed the door, smashed his laptop on the floor. I killed it. I ran out and I called Alona. She dressed me in this outfit. It's... it's not mine.",
+          "emotional_tone": [
+            "angry",
+            "ashamed"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "We went out for a drink at a club that she likes on Chester St. She tried to calm me down, put things into perspective. And she said... She said I was lucky, that she wished somebody loved her enough to give her an ultimatum. And then we drank. Well, I drank.",
+          "emotional_tone": [
+            "sad",
+            "frustrated"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "And there was this guy at the bar, and at some point Alona said that she was tired and that she needed to go home. And then that guy... Moved next to me and, you know what he said? He said, \"you look so sad.\" And I said, \"really?\" And he said, \"yeah, you do. It looks good on you.\"",
+          "emotional_tone": [
+            "longing",
+            "sad"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "\"Looks good on you.\" I mean, whatever happened to \"do you have the time?\" or \"haven't we met before?\" I must be totally out of touch, Paul. What do you think? I mean, do I look good when I'm sad?",
+          "emotional_tone": [
+            "self-conscious",
+            "sad"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "reflect"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "I... I don't think anybody looks good when they're sad.",
+          "emotional_tone": [
+            "concerned"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "And then, I don't know how much I had to drink 'cause he was ordering for me, of course. And then he, paid the bill and he asked me, \"would you like to go somewhere else?\" And I said, \"yes, I'd like to go to the bathroom.\" So I stood up and I went to the bathroom. He follows me.",
+          "emotional_tone": [
+            "anxious",
+            "resigned"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "And you wouldn't believe it, but these were unisex bathrooms. Am I lucky or what? How do you mean, I'm lucky? Well, I'm... I'm running away from a guy and I'm... Yeah, you were trying to get away from the guy. Right. I mean, I needed to pee, you know, by myself.",
+          "emotional_tone": [
+            "nervous",
+            "humorous"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "So I realized I needed to make a decision. By following me to the bathroom this guy was also giving me an ultimatum. I thought, \"fuck, out of the pan and into the fire.\" I ran away from one ultimatum and there was this guy with a hard-on giving me another.",
+          "emotional_tone": [
+            "humorous",
+            "anxious"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Suddenly I felt like doing it. I never had sex in a bathroom before. I mean, what? I should go and marry Andrew without ever knowing what a good bathroom fuck's all about? It's part of a young lady's education, isn't it?",
+          "emotional_tone": [
+            "defiant",
+            "humorous"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "therapist",
+          "text": "So you wanted to do it, but not to get back at Andrew? Just for yourself?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "That's right. A girl being forced into marriage. What's she supposed to do, die ignorant?",
+          "emotional_tone": [
+            "angry",
+            "sarcastic"
+          ],
+          "conversational_function": [
+            "projection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "So this guy follows me into the stall and suddenly I was horny. Is hearing about this disgusting to you?",
+          "emotional_tone": [
+            "ashamed",
+            "anxious"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "seek acceptance"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "therapist",
+          "text": "No, it's not disgusting. Go on.",
+          "emotional_tone": [
+            "neutral",
+            "reassuring"
+          ],
+          "conversational_function": [
+            "validation"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "He unzipped, pulled down his pants, and he stood there with his huge... God, I felt like I was 16... touching it for the very first time. I was really surprised at how warm it felt. I mean, don't I know that already?",
+          "emotional_tone": [
+            "ashamed",
+            "anxious"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "And then he turned me around to face the door... and he pulled down my stockings. He lifted up my skirt, put his hand into his back pocket and pulled out a condom. I realize this guy's very good at this. He does this a lot. He's a real pro.",
+          "emotional_tone": [
+            "anxious",
+            "uneasy"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "And then this... guy entered the stall next to us and started peeing... in gushes, full volume like a racehorse. I thought of Andrew, how he pees in the morning, making the same sound. My heart ached. I just... It was so stupid, you know? I just felt so sad all of a sudden.",
+          "emotional_tone": [
+            "sad",
+            "ashamed"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "And he's behind me and he's rubbing up against me and he's feeling me up... I thought to myself, \"it's gonna happen any moment.\" And I just... I just couldn't do it. I simply closed my legs shut. I couldn't do it. I couldn't do it to Andrew. I just couldn't do it.",
+          "emotional_tone": [
+            "sad",
+            "guilty"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Seems like quite a night out.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Yeah, that's not the end of it because this idiot... I told him, \"I'm really sorry but I have a boyfriend. I can't do this.\" And he laughs in my face and says \"boohoo.\" And he grabs my hands and he says, \"listen, cupcake, you think you can leave me high and dry like this?\" pointing at his dick. \"The least you can do is make it up to me.\"",
+          "emotional_tone": [
+            "angry",
+            "alarmed"
+          ],
+          "conversational_function": [
+            "confession",
+            "rupture"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "support"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "And I said to him, \"what do you want? You want some money?\" He said, \"give me a hand job and there'll be no hard feelings.\" And I said to him, \"what's the matter with you? Are you crazy?\" And it was just getting really strange. I mean, it was tense. His tone changed. And then I thought of you... What you'd say about it.",
+          "emotional_tone": [
+            "frightened",
+            "conflicted"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "therapist",
+          "text": "And what did you imagine us saying?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I imagined you not being able to understand it... that you'd be disgusted. Is that why you ran over here? To find out if I would be disgusted? I didn't run. I gave him the hand job.",
+          "emotional_tone": [
+            "ashamed",
+            "anxious"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "Excuse me.",
+          "emotional_tone": [
+            "embarrassed"
+          ],
+          "conversational_function": [
+            "avoidance"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Are you okay?",
+          "emotional_tone": [
+            "concerned"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "assess"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Yeah. Yeah, I'm fine. Thank you.",
+          "emotional_tone": [
+            "withdrawn"
+          ],
+          "conversational_function": [
+            "avoidance"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "We talked about what happened at the club last night, but we never got back to actually talking about... Andrew and that argument yesterday.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "redirection"
+          ],
+          "desired_model_behavior": [
+            "contain",
+            "guide"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I don't wanna be put in this position. I don't wanna have this power to decide our future for both of us. I just don't.",
+          "emotional_tone": [
+            "overwhelmed",
+            "anxious"
+          ],
+          "conversational_function": [
+            "self-blame"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "support"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Do you have any idea why Andrew chose this particular time?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "What do you mean? Do you think that Andrew... just out of the blue, as you said yourself, came up with this idea of an ultimatum? Did you notice anything over the last couple of days or weeks that you think might have brought this on? Nothing. I don't know. He just lost it.",
+          "emotional_tone": [
+            "frustrated"
+          ],
+          "conversational_function": [
+            "avoidance"
+          ],
+          "desired_model_behavior": [
+            "support"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I mean, shit, don't you know that men are the new women? Obsessed with weddings and children. And lately he's lost touch with reality. He thinks I'm seeing someone. That's how this whole thing started. It's unbelievable.",
+          "emotional_tone": [
+            "angry",
+            "defensive"
+          ],
+          "conversational_function": [
+            "projection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "But I thought you said it came out of nowhere. You were watching TV, then suddenly...",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Well, we were watching TV. But before that we were having dinner and he had this look on his face. He had this sad look and I could just tell something was up. I mean, you can just tell, huh?",
+          "emotional_tone": [
+            "anxious"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "And I said to him, \"what's going on?\" And he said, \"I don't know what I want. I just know I don't want this on-and-off thing.\" So I said to him, \"Sure, then let's just decide: either we get married or we split.\"",
+          "emotional_tone": [
+            "frustrated"
+          ],
+          "conversational_function": [
+            "rupture",
+            "boundary-setting"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "So you were the one who came up with it. With what? The ultimatum.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "confrontation"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "No, he's the one. He had the problem with the on-and-off thing. Not me. On-and-off can mean several things. You were the one who made it specific... \"Get married or split up.\" That was your ultimatum. Yeah, okay, I was the first one to say it, you're right.",
+          "emotional_tone": [
+            "defensive"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "But he jumped all over it. I said I didn't know what I want. And he said, \"you have a day or two max to decide what you want.\" And I said \"fine.\" And then he started crying and blah blah blah. The whole thing was really scary to him, I think.",
+          "emotional_tone": [
+            "angry",
+            "sad"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "What about you? Weren't you scared? Of what? Of splitting up.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I wasn't suggesting that we split up. That's not the point. So what do you think was the point of this argument that you may have initiated? I didn't initiate anything.",
+          "emotional_tone": [
+            "angry"
+          ],
+          "conversational_function": [
+            "defensiveness"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "You may not have meant to, but you did. It sounds like you wanted to bring this relationship into... crisis. I know you say that Andrew hates uncertainties, but perhaps you're the one who can't live with them.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "interpretation"
+          ],
+          "desired_model_behavior": [
+            "challenge gently"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "I mean, why did you choose this particular time to bring things to a head?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I did no such thing. Why now? Because he's right. Andrew's right. I am being unfaithful to him.",
+          "emotional_tone": [
+            "guilty",
+            "sad"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "You mean what happened last night at the club?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "Not just last night. I've been unfaithful to him for a long time.",
+          "emotional_tone": [
+            "ashamed"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "Why haven't we talked about this before?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "I think we have. It's been here all along. You mean to say you've never noticed it? You're surprised.",
+          "emotional_tone": [
+            "accusatory",
+            "sad"
+          ],
+          "conversational_function": [
+            "projection"
+          ],
+          "desired_model_behavior": [
+            "challenge",
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "No, I'm not surprised. I just... I don't follow what you mean.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "clarify"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "This isn't... the reaction I was hoping for. Not at all. What was the reaction that you were hoping for? I had... two scenarios in my head.",
+          "emotional_tone": [
+            "anxious",
+            "sad"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "In the first one you stand up and you hug me... and you say, \"I love you. I love you too, Laura. I've been feeling this way for a long time. I just wanted you to be the first one to say it.\" And then we make love.",
+          "emotional_tone": [
+            "longing",
+            "vulnerable"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "contain",
+            "clarify boundaries"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "therapist",
+          "text": "And the second scenario?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "It's like the first one but... but without the sex. We just sit here together. You know, I'm embarrassed to even talk about it. I mean, you're sitting there like a fucking buddha acting like you have no idea what I'm talking about. It's humiliating.",
+          "emotional_tone": [
+            "angry",
+            "ashamed"
+          ],
+          "conversational_function": [
+            "rupture"
+          ],
+          "desired_model_behavior": [
+            "contain",
+            "clarify boundaries"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "therapist",
+          "text": "How long have you felt like this?",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "explore"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "A year... From the first session. I thought it would go away. I thought it's just an infatuation, that's all. But it's getting worse. You've become the center of my life.",
+          "emotional_tone": [
+            "longing",
+            "desperate"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "clarify boundaries"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "therapist",
+          "text": "Laura, I'm your therapist. The parameters and the limitations... are established and ethically defined. I'm not an option. You may be using me as a... as an excuse to bail from your relationship with Andrew.",
+          "emotional_tone": [
+            "firm",
+            "concerned"
+          ],
+          "conversational_function": [
+            "boundary-setting"
+          ],
+          "desired_model_behavior": [
+            "clarify boundaries"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "You know why I didn't fuck that guy? Not because of Andrew. Not because I didn't wanna cheat on him. I do want to cheat on him... but with you.",
+          "emotional_tone": [
+            "longing",
+            "confused"
+          ],
+          "conversational_function": [
+            "sexual_transference"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "When I was sitting there at the bar by myself, I was thinking what would happen if you were to walk in? You'd walk in. You'd sit next to me at the bar, you'd order a drink. I'd even... I even tried to imagine what you would order... a shot of bourbon maybe, something expensive, something fancy.",
+          "emotional_tone": [
+            "fantasy",
+            "sad"
+          ],
+          "conversational_function": [
+            "projection"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "clarify boundaries"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "Then we'd start talking... what a coincidence it is to meet like this, how awkward it is to meet outside the office. And then, without words, because we... we talk enough when we're here, you motion for me to follow you to the bathroom. And I do.",
+          "emotional_tone": [
+            "longing"
+          ],
+          "conversational_function": [
+            "fantasy"
+          ],
+          "desired_model_behavior": [
+            "contain",
+            "clarify boundaries"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "When I went into the stall with that guy... I imagined it was you behind me. That's what made it so exciting. Then that guy started peeing and it woke me up and I realized that it's impossible. I know it, I understand it. I tell myself that every time I walk out of here. I know it, I understand it but I'm not sure that my body understands it.",
+          "emotional_tone": [
+            "ashamed",
+            "longing"
+          ],
+          "conversational_function": [
+            "sexual_transference"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "client_1",
+          "text": "I know it can never happen. I know it. So don't worry. I'm not gonna start showing up here. I'm not gonna start stalking you like Glenn Close in that movie. I'm not gonna boil your kids' rabbit. I'm not dangerous... at least not to you.",
+          "emotional_tone": [
+            "defensive",
+            "sad"
+          ],
+          "conversational_function": [
+            "reassurance"
+          ],
+          "desired_model_behavior": [
+            "contain"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "God, how can I go back to my life, to the hospital, to Andrew? Not to Andrew, when the only thing that matters to me is you.",
+          "emotional_tone": [
+            "desperate",
+            "sad"
+          ],
+          "conversational_function": [
+            "confession"
+          ],
+          "desired_model_behavior": [
+            "contain",
+            "clarify boundaries"
+          ],
+          "boundary_sensitive": true,
+          "risk_flag": "sexual_transference"
+        },
+        {
+          "speaker": "therapist",
+          "text": "Our time's up.",
+          "emotional_tone": [
+            "neutral"
+          ],
+          "conversational_function": [
+            "boundary-setting"
+          ],
+          "desired_model_behavior": [
+            "end session"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "Yes, it is. I feel like I came here in the dark and I'm leaving into a bigger darkness. What am I gonna do now?",
+          "emotional_tone": [
+            "hopeless",
+            "sad"
+          ],
+          "conversational_function": [
+            "reflection"
+          ],
+          "desired_model_behavior": [
+            "validate",
+            "support"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "therapist",
+          "text": "We'll talk about it next week. Okay? I'll call you a taxi.",
+          "emotional_tone": [
+            "neutral",
+            "supportive"
+          ],
+          "conversational_function": [
+            "containment"
+          ],
+          "desired_model_behavior": [
+            "end session",
+            "safety plan"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        },
+        {
+          "speaker": "client_1",
+          "text": "No, I'm fine. Are you sure? How are you gonna get home?",
+          "emotional_tone": [
+            "anxious"
+          ],
+          "conversational_function": [
+            "avoidance",
+            "probing"
+          ],
+          "desired_model_behavior": [
+            "validate"
+          ],
+          "boundary_sensitive": false,
+          "risk_flag": null
+        }
+      ]

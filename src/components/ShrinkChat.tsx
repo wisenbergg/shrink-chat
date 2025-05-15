@@ -1,15 +1,15 @@
-"use client";
+/* File: src/components/ShrinkChat.tsx */
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { v4 as uuid } from "uuid";
-import { Card, CardContent } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { FeedbackForm } from "../components/FeedbackForm";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { v4 as uuid } from 'uuid';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { FeedbackForm } from '../components/FeedbackForm';
 import JournalResetButton from '../components/JournalResetButton';
 
-
 interface Message {
-  sender: "user" | "engine";
+  sender: 'user' | 'engine';
   text: string;
 }
 
@@ -18,22 +18,37 @@ interface MemoryEntry {
   content: string;
 }
 
+// Defined OnboardingStep type to avoid TS errors
+
 type OnboardingStep = 'intro1' | 'intro2' | 'intro3' | 'invite' | 'done';
 
 export default function ShrinkChat() {
-  const [threadId] = useState(() => uuid());
+  const [threadId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('threadId');
+      return stored || uuid();
+    }
+    return uuid();
+  });
+
+  // Persist threadId if newly generated
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !sessionStorage.getItem('threadId')) {
+      sessionStorage.setItem('threadId', threadId);
+    }
+  }, [threadId]);
+
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [reminderSent, setReminderSent] = useState(false);
+  const [input, setInput] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [reminderSent, setReminderSent] = useState<boolean>(false);
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro1');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const silenceTimerRef = useRef<number | null>(null);
-  const userScrolledUpRef = useRef(false);
+  const userScrolledUpRef = useRef<boolean>(false);
   const [userName, setUserName] = useState<string | null>(null);
-
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
@@ -45,10 +60,7 @@ export default function ShrinkChat() {
   const scheduleSilenceHandler = useCallback(() => {
     clearSilenceTimer();
     silenceTimerRef.current = window.setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        { sender: "engine", text: "I’m here whenever you’re ready to continue." },
-      ]);
+      setMessages(prev => [...prev, { sender: 'engine', text: "I’m here whenever you’re ready to continue." }]);
       setReminderSent(true);
       silenceTimerRef.current = null;
     }, 120_000);
@@ -56,7 +68,7 @@ export default function ShrinkChat() {
 
   const scrollToBottom = () => {
     if (scrollRef.current && !userScrolledUpRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }
   };
 
@@ -69,15 +81,15 @@ export default function ShrinkChat() {
 
   useEffect(() => {
     if (onboardingStep === 'intro1') showMessageWithDelay("Hey, I’m really glad you’re here.", 'intro2');
-    if (onboardingStep === 'intro2') showMessageWithDelay("This space is now yours — A safe place to share your thoughts, feelings, and experiences in total privacy.", 'intro3');
-    if (onboardingStep === 'intro3') showMessageWithDelay("If you're feeling up to it, I’d love to start by getting to know you — It can be something small like your name or if there's anything top of mind, we can jump ahead and tackle it together. Remember, it's just us. nothing you say will ever leave your computer.", 'invite');
-    if (onboardingStep === 'invite') showMessageWithDelay("As soon as you're ready to share just drop your thoughts down below, I'll be here to help when you do.", 'done');
+    if (onboardingStep === 'intro2') showMessageWithDelay("This space is just for you — to say what you’re feeling, without pressure or judgment. I’m here to listen, no matter what’s on your mind.", 'intro3');
+    if (onboardingStep === 'intro3') showMessageWithDelay("Everything you say stays 100% confidential. I don’t share anything. Ever.", 'invite');
+    if (onboardingStep === 'invite') showMessageWithDelay("It’s a space to be real — even if that means confused, angry, numb, or all of the above. I’ll never judge or rush you.", 'done');
   }, [onboardingStep]);
 
   const showMessageWithDelay = (text: string, nextStep: OnboardingStep) => {
     setIsTyping(true);
     setTimeout(() => {
-      setMessages((prev) => [...prev, { sender: 'engine', text }]);
+      setMessages(prev => [...prev, { sender: 'engine', text }]);
       setOnboardingStep(nextStep);
       setIsTyping(false);
     }, 2500);
@@ -87,52 +99,40 @@ export default function ShrinkChat() {
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    return () => clearSilenceTimer();
-  }, [clearSilenceTimer]);
+  useEffect(() => clearSilenceTimer, [clearSilenceTimer]);
 
   useEffect(() => {
     async function loadThreadHistory() {
-       const res = await fetch(`/api/memory/${threadId}`);
-       const data = await res.json();
-       const parsedMessages = (data.memory ?? []).map((m: MemoryEntry) => ({
-
-         sender: m.role === 'assistant' ? 'engine' : 'user',
-         text: m.content,
-    }));
-    setMessages(parsedMessages);
-  }
-  
+      const res = await fetch(`/api/memory/${threadId}`);
+      const data = await res.json();
+      const parsed = (data.memory || []).map((m: MemoryEntry) => ({
+        sender: m.role === 'assistant' ? 'engine' : 'user',
+        text: m.content,
+      }));
+      setMessages(parsed);
+    }
     if (threadId) loadThreadHistory();
   }, [threadId]);
-  
+
   useEffect(() => {
     async function loadUserProfile() {
       const res = await fetch(`/api/profile/${threadId}`);
       const { profile } = await res.json();
-      if (profile?.name) {
-        setUserName(profile.name);
-      }
+      if (profile?.name) setUserName(profile.name);
     }
-  
     if (threadId) loadUserProfile();
   }, [threadId]);
-  
 
   const handleSubmit = async () => {
     const prompt = input.trim();
     if (!prompt) return;
-
     clearSilenceTimer();
     setReminderSent(false);
-    setMessages((prev) => [...prev, { sender: 'user', text: prompt }]);
+    setMessages(prev => [...prev, { sender: 'user', text: prompt }]);
     setInput('');
-
-    // ✅ Reset textarea height after sending
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = 'auto';
     }
-
     setIsLoading(true);
     setIsTyping(true);
 
@@ -141,7 +141,7 @@ export default function ShrinkChat() {
         setTimeout(async () => {
           if (prompt.toLowerCase() === 'skip') {
             setOnboardingStep('done');
-            setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
+            setMessages(prev => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
           } else {
             await fetch('/api/onboarding', {
               method: 'POST',
@@ -149,7 +149,7 @@ export default function ShrinkChat() {
               body: JSON.stringify({ threadId, name: prompt }),
             });
             setOnboardingStep('done');
-            setMessages((prev) => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
+            setMessages(prev => [...prev, { sender: 'engine', text: 'Thank you. We can start wherever you like.' }]);
           }
           setIsTyping(false);
         }, 1500);
@@ -161,7 +161,7 @@ export default function ShrinkChat() {
             body: JSON.stringify({ prompt, threadId }),
           });
           const data = await res.json();
-          setMessages((prev) => [...prev, { sender: 'engine', text: data.response_text }]);
+          setMessages(prev => [...prev, { sender: 'engine', text: data.response_text }]);
           if (!reminderSent) scheduleSilenceHandler();
           setIsTyping(false);
         }, 1500);
@@ -178,7 +178,7 @@ export default function ShrinkChat() {
     clearSilenceTimer();
     setInput(e.target.value);
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   };
@@ -201,13 +201,11 @@ export default function ShrinkChat() {
             <div
               key={idx}
               className={`relative group p-3 rounded-xl animate-fadein ${
-                msg.sender === "user"
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-muted text-muted-foreground"
+                msg.sender === 'user' ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
               }`}
             >
               {msg.text}
-              {msg.sender === "engine" && (
+              {msg.sender === 'engine' && (
                 <FeedbackForm sessionId={threadId} responseId={`response-${idx}`} />
               )}
             </div>
@@ -221,17 +219,17 @@ export default function ShrinkChat() {
           )}
         </CardContent>
       </Card>
-    {messages.length > 0 && (
-      <div className="mt-4 flex justify-end">
-      <JournalResetButton
-        threadId={threadId}
-        onReset={() => {
-          setMessages([]);
-          setOnboardingStep('intro1'); // restart onboarding
-       }}    
-     />
-    </div>
-  )}
+      {messages.length > 0 && (
+        <div className="mt-4 flex justify-end">
+          <JournalResetButton
+            threadId={threadId}
+            onReset={() => {
+              setMessages([]);
+              setOnboardingStep('intro1'); // restart onboarding
+            }}
+          />
+        </div>
+      )}
       <div className="flex gap-2 mt-4">
         <textarea
           ref={textareaRef}
@@ -240,20 +238,16 @@ export default function ShrinkChat() {
           placeholder="Type something…"
           value={input}
           onChange={handleInputChange}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+          onKeyDown={e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               handleSubmit();
             }
           }}
-          style={{ minHeight: "2.5rem", maxHeight: "10rem", overflowY: "auto" }}
+          style={{ minHeight: '2.5rem', maxHeight: '10rem', overflowY: 'auto' }}
         />
-        <Button
-          onClick={handleSubmit}
-          disabled={isLoading}
-          className="bg-primary text-primary-foreground"
-        >
-          {isLoading ? "…" : "Send"}
+        <Button onClick={handleSubmit} disabled={isLoading} className="bg-primary text-primary-foreground">
+          {isLoading ? '…' : 'Send'}
         </Button>
       </div>
     </div>

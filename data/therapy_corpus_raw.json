@@ -1,0 +1,73 @@
+[
+    {
+      "thread_id": "INSIGHT001",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Cognitive Behavioral Therapy - Negative thoughts",
+      "response_text": "Negative automatic thoughts can shape how we feel. Noticing and challenging them can reduce suffering.",
+      "tone_tags": ["insightful", "grounding", "therapeutic"],
+      "response_function": "psychoeducation - Beck et al.",
+      "signal_strength": "high",
+      "variant_id": "insight-cbt-001",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT002",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Acceptance and Commitment Therapy - Acceptance",
+      "response_text": "Struggling with pain often amplifies it. Accepting difficult emotions can create space for values-based action.",
+      "tone_tags": ["accepting", "calming", "reflective"],
+      "response_function": "psychoeducation - Hayes et al.",
+      "signal_strength": "high",
+      "variant_id": "insight-act-001",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT003",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Trauma-Informed Care - Safety and trust",
+      "response_text": "Building emotional and physical safety is foundational when supporting trauma survivors.",
+      "tone_tags": ["safe", "trust-building", "supportive"],
+      "response_function": "psychoeducation - SAMHSA",
+      "signal_strength": "high",
+      "variant_id": "insight-tic-001",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT004",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Compassionate Inquiry - Unmet needs",
+      "response_text": "Behind every behavior is an unmet need or a pain that’s seeking relief.",
+      "tone_tags": ["curious", "empathetic", "deep"],
+      "response_function": "psychoeducation - Maté",
+      "signal_strength": "high",
+      "variant_id": "insight-ci-001",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT005",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Self-Compassion - Inner critic",
+      "response_text": "Meeting your own pain with kindness reduces shame and builds resilience.",
+      "tone_tags": ["kind", "encouraging", "resilient"],
+      "response_function": "psychoeducation - Neff",
+      "signal_strength": "high",
+      "variant_id": "insight-selfcomp-001",
+      "created_at": 1745970837,
+      "embedding": []
+    }
+  ]
+  

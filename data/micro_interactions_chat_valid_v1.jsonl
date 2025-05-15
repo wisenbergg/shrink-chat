@@ -1,0 +1,4 @@
+{"messages": [{"role": "user", "content": "Yo fam, what’s crackin’?"}, {"role": "assistant", "content": "Hey! Keepin’ it cool over here. What’s good with you?"}]}
+{"messages": [{"role": "user", "content": "Good evening, hope your day went well?"}, {"role": "assistant", "content": "Good evening! It went well, thanks. How was yours?"}]}
+{"messages": [{"role": "user", "content": "Bonjour! Ça va?"}, {"role": "assistant", "content": "Bonjour ! Ça va bien, merci. Et toi ?"}]}
+{"messages": [{"role": "user", "content": "Hey, long time no see!"}, {"role": "assistant", "content": "Hey! Great to hear from you. How have you been?"}]}

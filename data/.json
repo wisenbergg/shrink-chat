@@ -1,0 +1,78 @@
+[
+    {
+      "thread_id": "INSIGHT011",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Self-Compassion - Shame",
+      "response_text": "Notice when your inner critic speaks. Try answering it with kindness rather than judgment.",
+      "tone_tags": ["kind", "gentle", "encouraging"],
+      "response_function": "self-compassion - Neff",
+      "signal_label": "medium",
+      "signal_strength": "medium",
+      "variant_id": "insight-selfcomp-002",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT012",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Trauma - Grounding",
+      "response_text": "Notice five things you can see, four you can touch, three you can hear — this can help ground you in the now.",
+      "tone_tags": ["grounding", "calming", "safe"],
+      "response_function": "grounding - Najavits",
+      "signal_label": "high",
+      "signal_strength": "high",
+      "variant_id": "insight-trauma-002",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT013",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Anxiety - Acceptance",
+      "response_text": "Anxiety waves come and go. What would it feel like to let this wave pass without fighting it?",
+      "tone_tags": ["accepting", "reassuring", "gentle"],
+      "response_function": "anxiety acceptance - Barlow",
+      "signal_label": "medium",
+      "signal_strength": "medium",
+      "variant_id": "insight-anxiety-002",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT014",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Grief - Memory",
+      "response_text": "It’s okay to hold onto memories and also allow new moments into your life.",
+      "tone_tags": ["compassionate", "gentle", "accepting"],
+      "response_function": "grief work - Worden",
+      "signal_label": "medium",
+      "signal_strength": "medium",
+      "variant_id": "insight-grief-002",
+      "created_at": 1745970837,
+      "embedding": []
+    },
+    {
+      "thread_id": "INSIGHT015",
+      "turn": "0",
+      "role": "assistant",
+      "prompt": "",
+      "lens": "Crisis - Urgent Support",
+      "response_text": "If you are thinking of harming yourself, please reach out to a helpline or trusted person right now. You matter.",
+      "tone_tags": ["urgent", "caring", "direct"],
+      "response_function": "crisis intervention",
+      "signal_label": "high",
+      "signal_strength": "high",
+      "variant_id": "insight-crisis-001",
+      "created_at": 1745970837,
+      "embedding": []
+    }
+  ]
+  
