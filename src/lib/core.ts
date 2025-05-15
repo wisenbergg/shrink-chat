@@ -6,7 +6,6 @@ import { fetchRecall } from './fetchRecall';
 import { inferToneTagsFromText } from './toneInference';
 import { predictSignal } from './predictSignal';
 import { logSessionEntry } from './logSession';
-import { toneDriftFilter } from '../middleware';
 import { friendlyPrimers } from '@/lib/stylePrimers/friendly';
 import { professionalPrimers } from '@/lib/stylePrimers/professional';
 
@@ -118,7 +117,7 @@ export async function runShrinkEngine(input: PromptInput): Promise<PromptResult>
   await logMemoryTurn(threadId, 'assistant', response_text);
   await logSessionEntry({ sessionId, role: 'assistant', content: response_text, signal, toneTags: responseToneTags, recallUsed });
  
-  if (!toneDriftFilter(response_text)) console.warn('⚠️ Tone drift detected');
+
   return { response_text, recallUsed, tone_tags: responseToneTags, signal, model };
 }
 
