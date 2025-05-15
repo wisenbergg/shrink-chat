@@ -1,44 +1,26 @@
-/* File: src/app/onboarding/welcome/page.tsx */
-'use client';
+// File: src/app/onboarding/welcome/page.tsx
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { v4 as uuid } from 'uuid';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import Link from "next/link";
 
 export default function WelcomePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !sessionStorage.getItem('threadId')) {
-      sessionStorage.setItem('threadId', uuid());
-    }
-  }, []);
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <Card className="max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle>Hey. I&apos;m really glad you&apos;re here.</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p>
-            This space is just for you — to say what you&rsquo;re feeling, without pressure or judgment.<br/>
-            I&apos;m here to listen, no matter what&rsquo;s on your mind.
-            </p>
-            <Button size="lg" onClick={() => router.push('/onboarding/privacy')}>
-              Next
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-full max-w-2xl p-8 flex flex-col h-80">
+        <div className="flex-1 flex items-center justify-center">
+          <h2 className="text-xl font-medium text-gray-900 text-center animate-fade-in font-freight">
+            Hey. I&apos;m really glad you&apos;re here.
+          </h2>
+        </div>
+        <div className="h-24 flex items-center justify-center">
+          <Link
+            href="/onboarding/privacy"
+            className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 btn-hover-effect w-24 h-10"
+          >
+            Next
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

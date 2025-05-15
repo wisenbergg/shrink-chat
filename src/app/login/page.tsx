@@ -1,50 +1,62 @@
+// File: src/app/login/page.tsx
 "use client";
 
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-
-  const sitePassword = process.env.NEXT_PUBLIC_SITE_PASSWORD || "stillwater";
+  const sitePassword =
+    process.env.NEXT_PUBLIC_SITE_PASSWORD || "stillwater";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === sitePassword) {
       localStorage.setItem("authenticated", "true");
-      router.push("/");
+      router.replace("/");
     } else {
       setError("Incorrect password");
     }
   };
 
   return (
-    <div>
-    <div style={{ position: "absolute", top: "0", left: "0", margin: "1rem" }}>
-      <Image src="/logo.svg" alt="Logo" width={64} height={64} />
-    </div>
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md">
-        <h1 className="text-2xl mb-4 font-bold">Enter Password</h1>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-full p-2 border rounded mb-4"
-        />
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded"
-        >
-          Enter
-        </button>
-      </form>
-    </div>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="absolute top-4 left-4">
+        <Image src="/logo.svg" alt="Logo" width={64} height={64} />
+      </div>
+      <Card className="w-full max-w-sm bg-card">
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Enter Password</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && <p className="text-destructive">{error}</p>}
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full">
+              Enter
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 }
