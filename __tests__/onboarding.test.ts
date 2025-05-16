@@ -1,5 +1,5 @@
 import { createMocks } from 'node-mocks-http';
-import handler from '../src/app/api/onboarding';
+import handler from '../app/api/onboarding';
 
 describe('/api/onboarding', () => {
   it('rejects non-POST requests', async () => {

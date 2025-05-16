@@ -1,0 +1,55 @@
+/* File: app/globals.css */
+
+/* 1) Tailwind layers */
+@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2) tw-animate-css if you’re still using it */
+@import "tw-animate-css";
+
+/* 3) Your custom theme tokens & base styles */
+@layer base {
+  :root {
+    --radius: 0.625rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.141 0.005 285.823);
+    /* …all your other --token definitions… */
+  }
+
+  .dark {
+    --background: oklch(0.141 0.005 285.823);
+    --foreground: oklch(0.985 0 0);
+    /* …your dark overrides… */
+  }
+
+  /* Fade-in animation */
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);  }
+  }
+  .animate-fadein {
+    animation: fadein 0.9s ease-in-out forwards;
+  }
+
+  /* Typing indicator */
+  .typing-indicator {
+    @apply flex gap-1.5 items-center py-2;
+  }
+  .typing-indicator .dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--muted-foreground);
+    animation: blink 1.4s infinite both;
+  }
+  .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0; }
+    40%           { opacity: 1; }
+  }
+}

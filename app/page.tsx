@@ -4,7 +4,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import ShrinkChat from "../components/ShrinkChat";
+import ShrinkChat from "@/components/ShrinkChat";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 
 export default function HomePage() {

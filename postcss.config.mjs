@@ -1,10 +1,7 @@
-// File: postcss.config.mjs
-import tailwindcss from 'tailwindcss'
-import autoprefixer from 'autoprefixer'
-
+/* postcss.config.mjs — ESM, but plugin names as strings */
 export default {
   plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
+    '@tailwindcss/postcss': {},   // Tailwind v4 PostCSS engine
+    autoprefixer: {},             // Vendor prefixing
   },
-}
+};
