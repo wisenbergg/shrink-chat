@@ -1,0 +1,2 @@
+-- Your updated schema goes here
+-- Please paste your schema content to replace this placeholder

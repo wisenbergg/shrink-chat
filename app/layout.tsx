@@ -1,13 +1,18 @@
-// File: src/app/layout.tsx
-import './globals.css';
+// app/layout.tsx
+import "./globals.css";
+import "./fonts.css"; // Import custom fonts CSS
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
-
+import { Analytics } from "@vercel/analytics/next";
+import { ClientLayout } from "./client-layout";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -15,9 +20,39 @@ const playfair = Playfair_Display({
   display: "swap",
 });
 
+// Define Apfel Grotezk as a variable without directly importing the font files
+// The actual font files will be loaded via CSS in fonts.css
+const apfelGrotezk = {
+  variable: "--font-apfel-grotezk",
+};
+
 export const metadata: Metadata = {
   title: "whenIwas",
   description: "your safe space",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
+    ],
+    apple: {
+      url: "/favicon/apple-touch-icon.png",
+      type: "image/png",
+      sizes: "180x180",
+    },
+    other: [
+      {
+        url: "/favicon/web-app-manifest-192x192.png",
+        type: "image/png",
+        sizes: "192x192",
+      },
+      {
+        url: "/favicon/web-app-manifest-512x512.png",
+        type: "image/png",
+        sizes: "512x512",
+      },
+    ],
+  },
+  manifest: "/favicon/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -26,27 +61,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full" style={{ colorScheme: "light dark" }}>
       <body
         className={`
           ${geistSans.variable}
           ${geistMono.variable}
           ${playfair.variable}
+          ${apfelGrotezk.variable}
           antialiased bg-background text-foreground h-full relative
         `}
       >
-        {/* Global logo */}
-        <div className="absolute top-4 left-4 z-10">
-          <Image
-            src="/logo.svg"
-            alt="whenIwas logo"
-            width={48}
-            height={48}
-            priority
-          />
-        </div>
-
-        {children}
+        <ClientLayout>
+          <div className="absolute z-10 top-4 left-4">
+            <Image
+              src="/Asset 4@2x.png"
+              alt="whenIwas logo"
+              width={48}
+              height={40}
+              priority
+            />
+          </div>
+          {children}
+          <Analytics />
+        </ClientLayout>
       </body>
     </html>
   );

@@ -1,6 +1,9 @@
 // src/lib/logChat.ts
 
-import supabaseAdmin from '../utils/supabase/server';
+import { createServerClient } from './supabaseClient/server';  // adjust path if needed
+
+// Service‐role client for server‐side operations
+const supabaseAdmin = createServerClient();
 
 export async function logChat(entry: {
   threadId: string;
@@ -8,24 +11,19 @@ export async function logChat(entry: {
   role: 'user' | 'assistant';
   content: string;
 }) {
-  // 1) Ensure there is a threads row with this id
+  // 1) Ensure the thread exists (so messages.thread_id FK is satisfied)
   const { error: threadError } = await supabaseAdmin
     .from('threads')
     .upsert(
-      {
-        id: entry.threadId,
-        // — if you also want to fill session_id, uncomment the next line:
-        // session_id: entry.threadId,
-      },
+      { id: entry.threadId },
       { onConflict: 'id' }
     );
-
   if (threadError) {
     console.error('❌ supabase upsert thread error:', threadError);
     throw new Error('logChat failed: unable to create thread record');
   }
 
-  // 2) Insert the new message into `messages`
+  // 2) Insert the chat turn into messages
   const { error: msgError } = await supabaseAdmin
     .from('messages')
     .insert({
@@ -36,7 +34,7 @@ export async function logChat(entry: {
     });
 
   if (msgError) {
-    console.error('❌ supabase logChat error:', msgError);
+    console.error('❌ supabase insert message error:', msgError);
     throw new Error(`logChat failed: ${msgError.message}`);
   }
 }

@@ -1,0 +1,34 @@
+{
+    "recommendations": [
+      // Formatter & Linting
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+  
+      // Tailwind & CSS
+      "bradlc.vscode-tailwindcss",
+      "heybourn.headwind",
+  
+      // Git & Project Management
+      "eamodio.gitlens",
+      "alefragnani.project-manager",
+  
+      // REST / API testing
+      "humao.rest-client",
+      "rangav.vscode-thunder-client",
+  
+      // Env
+      "mikestead.dotenv",
+  
+      // Path Intellisense
+      "christian-kohler.path-intellisense",
+  
+      // Testing
+      "orta.vscode-jest",
+      "ms-playwright.playwright",
+  
+      // Optional deep-dive
+      "ms-toolsai.jupyter",
+      "alexcvzz.vscode-sqlite"
+    ]
+  }
+  

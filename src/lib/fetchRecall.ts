@@ -1,9 +1,9 @@
-console.log('DEBUG_RAG=', process.env.DEBUG_RAG);
+console.log("DEBUG_RAG=", process.env.DEBUG_RAG);
 
-import { filterAndRankRAG } from './filterUtils';
-import fs from 'fs';
-import path from 'path';
-import OpenAI from 'openai';
+import { filterAndRankRAG } from "./filterUtils";
+import fs from "fs";
+import path from "path";
+// OpenAI will be dynamically imported later to avoid circular dependencies
 
 export interface RecallEntry {
   thread_id: string;
@@ -13,7 +13,7 @@ export interface RecallEntry {
   source: string;
   content: string;
   embedding: number[];
-  signal_label: 'low' | 'medium' | 'high';
+  signal_label: "low" | "medium" | "high";
   tone_tags: string[];
 }
 
@@ -26,7 +26,7 @@ export interface RetrievedChunk {
 }
 
 const CORPUS_FILES = [
-  path.join(process.cwd(), 'data', 'therapy_corpus_embedded_expanded.json'),
+  path.join(process.cwd(), "data", "therapy_corpus_embedded_expanded.json"),
 ];
 
 // Cache the loaded corpus in memory
@@ -37,9 +37,13 @@ function loadCorpus(): RecallEntry[] {
 
   for (const filePath of CORPUS_FILES) {
     try {
-      const raw = fs.readFileSync(filePath, 'utf-8');
+      const raw = fs.readFileSync(filePath, "utf-8");
       const entries = JSON.parse(raw) as RecallEntry[];
-      console.log(`[RAG DEBUG] Loaded ${entries.length} entries from ${path.basename(filePath)}`);
+      console.log(
+        `[RAG DEBUG] Loaded ${entries.length} entries from ${path.basename(
+          filePath
+        )}`
+      );
       all.push(...entries);
     } catch (err) {
       console.warn(`[RAG DEBUG] Could not load corpus file: ${filePath}`, err);
@@ -52,7 +56,9 @@ function loadCorpus(): RecallEntry[] {
 
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0;
-  let dot = 0, magA = 0, magB = 0;
+  let dot = 0,
+    magA = 0,
+    magB = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     magA += a[i] ** 2;
@@ -64,43 +70,49 @@ function cosineSimilarity(a: number[], b: number[]): number {
 export async function fetchRecall(
   prompt: string,
   tone_tags: string[],
-  signal: 'low' | 'medium' | 'high' | 'ambiguous'
+  signal: "low" | "medium" | "high" | "ambiguous"
 ): Promise<{ recallUsed: boolean; results: RetrievedChunk[] }> {
   // 0. Guard empty prompt
   if (!prompt.trim()) {
-    console.warn('[RAG DEBUG] Empty or invalid prompt');
+    console.warn("[RAG DEBUG] Empty or invalid prompt");
     return { recallUsed: false, results: [] };
   }
 
   // 1. Embed the user prompt
   let inputEmbedding: number[];
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    // Import at usage point to avoid circular dependencies
+    const { createOpenAIClient } = await import("./apiKeyLoader");
+    const openai = createOpenAIClient();
+
     const res = await openai.embeddings.create({
-      model: process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
+      model: process.env.EMBEDDING_MODEL || "text-embedding-3-small",
       input: prompt,
     });
     inputEmbedding = res.data[0].embedding;
 
-    if (process.env.DEBUG_RAG === 'true') {
-      console.log('[RAG DEBUG] Generated input embedding, length:', inputEmbedding.length);
+    if (process.env.DEBUG_RAG === "true") {
+      console.log(
+        "[RAG DEBUG] Generated input embedding, length:",
+        inputEmbedding.length
+      );
     }
   } catch (err) {
-    console.error('[RAG DEBUG] fetchRecall embedding error:', err);
+    console.error("[RAG DEBUG] fetchRecall embedding error:", err);
     return { recallUsed: false, results: [] };
   }
 
   // 2. Load and score against corpus
   const corpus = loadCorpus();
   if (corpus.length === 0) {
-    console.warn('[RAG DEBUG] No corpus entries loaded');
+    console.warn("[RAG DEBUG] No corpus entries loaded");
     return { recallUsed: false, results: [] };
   }
 
-  if (process.env.DEBUG_RAG === 'true') {
-    console.log('[RAG DEBUG] Calculating cosine similarities...');
+  if (process.env.DEBUG_RAG === "true") {
+    console.log("[RAG DEBUG] Calculating cosine similarities...");
   }
-  const scoredEntries = corpus.map(entry => ({
+  const scoredEntries = corpus.map((entry) => ({
     ...entry,
     score: cosineSimilarity(inputEmbedding, entry.embedding),
   }));
@@ -111,7 +123,7 @@ export async function fetchRecall(
 
   // 4. Take the top N
   const topN = Number(process.env.RECALL_TOP_N) || 3;
-  const topResults = filteredRanked.slice(0, topN).map(entry => ({
+  const topResults = filteredRanked.slice(0, topN).map((entry) => ({
     discipline: entry.discipline,
     topic: entry.topic,
     source: entry.source,
@@ -119,7 +131,7 @@ export async function fetchRecall(
     score: entry.score ?? 0,
   }));
 
-  if (process.env.DEBUG_RAG === 'true') {
+  if (process.env.DEBUG_RAG === "true") {
     console.log(`[RAG DEBUG] Top ${topN} chunks:`, topResults);
   }
 
@@ -128,4 +140,3 @@ export async function fetchRecall(
     results: topResults,
   };
 }
-

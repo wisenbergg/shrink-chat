@@ -1,74 +1,20 @@
-// src/app/api/shrink/route.ts
+import { type NextRequest, NextResponse } from "next/server";
+import { runShrinkEngine } from "@/lib/core";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { runShrinkEngine } from '@/lib/core';
-import { logChat } from '@/lib/logChat';
-
-interface PriorMessage {
-  sender: 'user' | 'assistant';
-  text: string;
-}
-
-export const runtime = 'nodejs';
-
-export async function POST(request: NextRequest) {
-  // Debug: log env at route level
-  console.log('ROUTE ENV JSON:', JSON.stringify(process.env.OPENAI_API_KEY));
-  console.log(
-    'ROUTE ENV CODES (first 20):',
-    process.env.OPENAI_API_KEY
-      ?.slice(0, 20)
-      .split('')
-      .map(c => c.charCodeAt(0))
-  );
+export async function POST(req: NextRequest) {
+  const { prompt, threadId, memoryContext = "" } = await req.json();
 
   try {
-    // 1) Parse and validate
-    const { prompt, threadId, threadIds, priorMessages = [] } = await request.json();
-    if (typeof prompt !== 'string' || !prompt.trim()) {
-      return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
-    }
-
-    const primary = threadId ?? threadIds?.[0];
-    if (!primary) {
-      return NextResponse.json({ error: 'Missing threadId or threadIds[0]' }, { status: 400 });
-    }
-
-    // 2) Log user turn
-    logChat({ threadId: primary, turn: 1, role: 'user', content: prompt });
-
-    // 3) Build full input for engine
+    // Pass the memory context directly to the engine
     const result = await runShrinkEngine({
-      sessionId: primary,
-      threadIds: [primary],
+      sessionId: threadId,
+      threadIds: [threadId],
       prompt,
-      history: (priorMessages as PriorMessage[]).map((m) => ({
-        role: m.sender,
-        content: m.text,
-      })),
+      memoryContext, // Pass memory context to your engine
     });
-
-    const text = result.response_text;
-
-    // 4) Log assistant turn
-    logChat({ threadId: primary, turn: 2, role: 'assistant', content: text });
-
-    // 5) Respond
-    return NextResponse.json(
-      {
-        response_text: text,
-        signal: result.signal,
-        tone_tags: result.tone_tags,
-        recallUsed: result.recallUsed,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json(result);
   } catch (err) {
-    console.error('Error in /api/shrink POST:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error in /api/shrink:", err);
+    return NextResponse.json({ message: "Internal error" }, { status: 500 });
   }
-}
-
-export async function GET() {
-  return NextResponse.json({ status: 'shrink endpoint ready' }, { status: 200 });
 }

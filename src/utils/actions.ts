@@ -1,105 +1,104 @@
 // File: src/utils/actions.ts
-"use server";
+'use server'
 
-import { createServerClient } from "./supabase/server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { v4 as uuidv4 } from "uuid";
+import { createServerClient } from '@/lib/supabaseClient/server'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
+import { v4 as uuidv4 } from 'uuid'
 
-// 1) Initialize a new user, thread, profile & progress (no cookie write)
-export async function initializeUser() {
-  try {
-    const supabase = createServerClient();
-    const userId = uuidv4();
-    const threadId = uuidv4();
+const UID_COOKIE = 'sw_uid'
+const COOKIE_OPTS = {
+  path: '/',
+  httpOnly: true,
+  sameSite: 'lax',
+  maxAge: 60 * 60 * 24 * 30 // 30 days
+}
 
-    await supabase.from("users").insert({ id: userId });
-    await supabase.from("threads").insert({ id: threadId });
-    await supabase.from("profiles").insert({
-      thread_id: threadId,
-      onboarding_complete: false,
-      name: null,
-      concerns: [],
-      emotional_tone: [],
-    });
-    await supabase.from("onboarding_progress").insert({
-      user_id: userId,
-      current_step: 1,
-    });
+/*──────────────── helper ────────────────*/
+async function ensureRows(id: string) {
+  const supabase = createServerClient()
+  await supabase.from('users').upsert({ id }, { onConflict: 'id' })
+  await supabase.from('threads').upsert({ id }, { onConflict: 'id' })
+  await supabase.from('profiles').upsert(
+    { thread_id: id, onboarding_complete: false },
+    { onConflict: 'thread_id' }
+  )
+  await supabase.from('onboarding_progress').upsert(
+    { user_id: id, current_step: 1 },
+    { onConflict: 'user_id' }
+  )
+}
 
-    return { userId, threadId };
-  } catch (err) {
-    console.error("initializeUser error:", err);
-    return null;
+/*──────────────── getUserId ──────────────*/
+export async function getUserId(): Promise<string> {
+  // `cookies()` typing is flaky across Next versions – cast to any
+  const store: any = cookies() as any
+  let id = store.get?.(UID_COOKIE)?.value ?? null
+
+  if (!id) {
+    id = uuidv4()
+    store.set?.(UID_COOKIE, id, COOKIE_OPTS) // sets Set-Cookie header
+    await ensureRows(id)
   }
+  return id
 }
 
-// 2) Get or create userId/threadId (no cookie)
-export async function getUserId() {
-  // Just always generate fresh for server logic; client tracks via sessionStorage
-  const result = await initializeUser();
-  return result?.userId ?? null;
-}
-
-// 3) Advance the onboarding step (and save an optional response)
+/*───────── onboarding helpers ─────────*/
 export async function updateOnboardingProgress(
   step: number,
   response?: string
 ): Promise<boolean> {
   try {
-    const userId = await getUserId();
-    if (!userId) throw new Error("Missing userId");
+    const userId = await getUserId()
+    const supabase = createServerClient()
 
-    const supabase = createServerClient();
     await supabase
-      .from("onboarding_progress")
-      .update({
-        current_step: step + 1,
-        [`step${step}_completed_at`]: new Date().toISOString(),
-      })
-      .eq("user_id", userId);
+      .from('onboarding_progress')
+      .upsert(
+        {
+          user_id: userId,
+          current_step: step + 1,
+          [`step${step}_completed_at`]: new Date().toISOString()
+        },
+        { onConflict: 'user_id' }
+      )
 
     if (response) {
-      await supabase.from("onboarding_responses").insert({
+      await supabase.from('onboarding_responses').insert({
         user_id: userId,
         step_number: step,
-        response,
-      });
+        response
+      })
     }
 
-    revalidatePath("/onboarding/welcome");
-    revalidatePath("/onboarding/privacy");
-    revalidatePath("/onboarding/choose-mode");
-
-    return true;
+    revalidatePath('/onboarding/welcome')
+    revalidatePath('/onboarding/privacy')
+    revalidatePath('/onboarding/choose-mode')
+    return true
   } catch (err) {
-    console.error("updateOnboardingProgress error:", err);
-    return false;
+    console.error('updateOnboardingProgress error:', err)
+    return false
   }
 }
 
-// 4) Fetch current onboarding progress
-export async function getOnboardingProgress(): Promise<any> {
+export async function getOnboardingProgress() {
   try {
-    const userId = await getUserId();
-    if (!userId) return null;
-
-    const supabase = createServerClient();
-    const { data, error } = await supabase
-      .from("onboarding_progress")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    if (error) throw error;
-    return data;
+    const userId = await getUserId()
+    const supabase = createServerClient()
+    const { data } = await supabase
+      .from('onboarding_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    return data
   } catch (err) {
-    console.error("getOnboardingProgress error:", err);
-    return null;
+    console.error('getOnboardingProgress error:', err)
+    return null
   }
 }
 
-// 5) Finalize onboarding & redirect to the chat home
 export async function completeOnboarding(): Promise<void> {
-  const ok = await updateOnboardingProgress(3);
-  if (ok) redirect("/");
+  const ok = await updateOnboardingProgress(3)
+  if (ok) redirect('/')
 }

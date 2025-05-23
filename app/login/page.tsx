@@ -1,5 +1,6 @@
-// File: src/app/login/page.tsx
 "use client";
+
+import type React from "react";
 
 import Image from "next/image";
 import { useState } from "react";
@@ -13,21 +14,50 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/context/SessionContext";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const sitePassword =
-    process.env.NEXT_PUBLIC_SITE_PASSWORD || "stillwater";
+  const { setThreadId } = useSession();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === sitePassword) {
-      localStorage.setItem("authenticated", "true");
-      router.replace("/");
-    } else {
-      setError("Incorrect password");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Call a server-side API endpoint to verify the password
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (response.ok) {
+        const { threadId } = await response.json();
+
+        // Store authentication state
+        localStorage.setItem("authenticated", "true");
+        // Use session context instead of direct localStorage
+        setThreadId(threadId);
+        console.log("Login successful, threadId set:", threadId);
+
+        // Redirect to onboarding with the threadId
+        router.replace(`/onboarding/welcome?threadId=${threadId}`);
+      } else {
+        const data = await response.json();
+        setError(data.message || "Authentication failed");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -47,12 +77,13 @@ export default function LoginPage() {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
             />
             {error && <p className="text-destructive">{error}</p>}
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full">
-              Enter
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Verifying..." : "Enter"}
             </Button>
           </CardFooter>
         </form>

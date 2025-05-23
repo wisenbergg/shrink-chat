@@ -1,7 +1,8 @@
-/* postcss.config.mjs — ESM, but plugin names as strings */
-export default {
+// postcss.config.mjs
+const postcssConfig = {
   plugins: {
-    '@tailwindcss/postcss': {},   // Tailwind v4 PostCSS engine
-    autoprefixer: {},             // Vendor prefixing
+    "@tailwindcss/postcss": {},
   },
 };
+
+export default postcssConfig;

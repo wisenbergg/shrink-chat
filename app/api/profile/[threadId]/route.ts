@@ -1,52 +1,49 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { getUserProfile, updateUserProfile, markOnboardingComplete } from '@/lib/sessionMemory';
-
-export const runtime = 'nodejs';
-
-const ParamsSchema = z.object({
-  threadId: z.string().uuid()
-});
+import { NextResponse } from "next/server";
+import { getUserProfile, updateUserProfile } from "@/lib/sessionMemory";
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ threadId: string }> }
+  request: Request,
+  context: { params: Promise<{ threadId: string }> }
 ) {
-  const { threadId } = await params;
-  const parsed = ParamsSchema.safeParse({ threadId });
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Missing or invalid threadId' }, { status: 400 });
+  const { threadId } = await context.params;
+  if (!threadId) {
+    return NextResponse.json({ error: "Missing threadId" }, { status: 400 });
   }
-
   try {
     const profile = await getUserProfile(threadId);
-    return NextResponse.json({ threadId, profile }, { status: 200 });
+    return NextResponse.json({ profile });
   } catch (err) {
-    console.error('[Profile API] Error fetching profile:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error fetching profile:", err);
+    return NextResponse.json(
+      { error: "Failed to retrieve profile" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ threadId: string }> }
+  request: Request,
+  context: { params: Promise<{ threadId: string }> }
 ) {
-  const { threadId } = await params;
-  const parsed = ParamsSchema.safeParse({ threadId });
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Missing or invalid threadId' }, { status: 400 });
+  const { threadId } = await context.params;
+  if (!threadId) {
+    return NextResponse.json({ error: "Missing threadId" }, { status: 400 });
+  }
+  let profileData;
+  try {
+    profileData = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const body = await req.json();
   try {
-    if (body.onboardingComplete) {
-      await markOnboardingComplete(threadId);
-    } else {
-      await updateUserProfile(threadId, body);
-    }
-    return NextResponse.json({ success: true }, { status: 200 });
+    await updateUserProfile(threadId, profileData);
+    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[Profile API] Error updating profile:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error updating profile:", err);
+    return NextResponse.json(
+      { error: "Failed to update profile" },
+      { status: 500 }
+    );
   }
 }

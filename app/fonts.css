@@ -1,0 +1,32 @@
+/* 
+ * Apfel Grotezk Font Declaration
+ * 
+ * Note: You need to place the actual font files in the public/fonts directory:
+ * - ApfelGrotezk-Regular.woff2
+ * - ApfelGrotezk-Medium.woff2
+ * - ApfelGrotezk-Bold.woff2
+ */
+
+@font-face {
+  font-family: "Apfel Grotezk";
+  src: url("/fonts/ApfelGrotezk-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apfel Grotezk";
+  src: url("/fonts/ApfelGrotezk-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Apfel Grotezk";
+  src: url("/fonts/ApfelGrotezk-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

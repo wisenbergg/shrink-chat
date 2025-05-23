@@ -1,6 +1,6 @@
 // File: src/app/api/onboarding.ts
-import { NextApiRequest, NextApiResponse } from 'next';
-import { updateUserProfile, markOnboardingComplete } from '@/lib/sessionMemory';
+import { NextApiRequest, NextApiResponse } from "next";
+import { updateUserProfile, markOnboardingComplete } from "@/lib/sessionMemory";
 
 interface OnboardingRequest {
   threadId: string;
@@ -14,8 +14,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method Not Allowed" });
   }
 
   const {
@@ -27,13 +27,13 @@ export default async function handler(
   }: OnboardingRequest = req.body;
 
   if (!threadId) {
-    return res.status(400).json({ message: 'Missing threadId' });
+    return res.status(400).json({ message: "Missing threadId" });
   }
 
   try {
     await updateUserProfile(threadId, {
       name: name?.trim(),
-      emotionalTone,
+      emotional_tone: emotionalTone,
       concerns,
     });
 
@@ -41,9 +41,9 @@ export default async function handler(
       markOnboardingComplete(threadId);
     }
 
-    return res.status(200).json({ message: 'Profile updated' });
+    return res.status(200).json({ message: "Profile updated" });
   } catch (error) {
-    console.error('Onboarding error:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    console.error("Onboarding error:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 }

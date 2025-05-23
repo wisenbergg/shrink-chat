@@ -1,6 +1,6 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import OpenAI from 'openai';
+import * as path from "path";
+import * as fs from "fs";
+import { createOpenAIClient } from "./apiKeyLoader";
 
 export interface ToneInferenceEntry {
   embedding: number[];
@@ -9,15 +9,15 @@ export interface ToneInferenceEntry {
 
 const TONE_CORPUS_PATH = path.join(
   process.cwd(),
-  'data',
-  'shrink_corpus_with_tone_tags.json'
+  "data",
+  "shrink_corpus_with_tone_tags.json"
 );
 
 let toneCorpus: ToneInferenceEntry[] | null = null;
 function loadToneCorpus(): ToneInferenceEntry[] {
   if (!toneCorpus) {
     try {
-      const raw = fs.readFileSync(TONE_CORPUS_PATH, 'utf8');
+      const raw = fs.readFileSync(TONE_CORPUS_PATH, "utf8");
       toneCorpus = JSON.parse(raw) as ToneInferenceEntry[];
     } catch (e) {
       console.error(`⚠️ Could not load tone corpus at ${TONE_CORPUS_PATH}:`, e);
@@ -28,7 +28,9 @@ function loadToneCorpus(): ToneInferenceEntry[] {
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0, magA = 0, magB = 0;
+  let dot = 0,
+    magA = 0,
+    magB = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     magA += a[i] ** 2;
@@ -41,12 +43,13 @@ function cosineSimilarity(a: number[], b: number[]): number {
  * Embeds the input text, finds nearest neighbor, returns tone tags.
  */
 export async function inferToneTagsFromText(text: string): Promise<string[]> {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  // Use our custom API key loader to ensure we have the correct key
+  const openai = createOpenAIClient();
 
   try {
     const embeddingResponse = await openai.embeddings.create({
       model: process.env.EMBEDDING_MODEL!,
-      input: text
+      input: text,
     });
 
     const inputEmbedding = embeddingResponse.data[0].embedding;
@@ -66,8 +69,7 @@ export async function inferToneTagsFromText(text: string): Promise<string[]> {
 
     return bestTags;
   } catch (e) {
-    console.error('⚠️ Failed to generate embedding or infer tone:', e);
+    console.error("⚠️ Failed to generate embedding or infer tone:", e);
     return [];
   }
 }
-
