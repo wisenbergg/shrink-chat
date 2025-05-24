@@ -66,9 +66,11 @@ export function extractAndStoreUserName(
     const match = message.match(pattern);
     if (match && match[1]) {
       const name = match[1];
-      // Store the name
-      storeInShortTermMemory(threadId, "userName", name);
-      break;
+      // Only store if it's a real name and not "Anonymous" (case-insensitive)
+      if (name.toLowerCase() !== "anonymous") {
+        storeInShortTermMemory(threadId, "userName", name);
+        break;
+      }
     }
   }
 }

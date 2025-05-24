@@ -140,7 +140,6 @@ export default function ShrinkChat() {
   const [onboardingStep, setOnboardingStep] =
     useState<OnboardingStep>("intro1");
   const [isTyping, setIsTyping] = useState(false);
-  const [userName, setUserName] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const silenceTimerRef = useRef<number | null>(null);
@@ -268,8 +267,7 @@ export default function ShrinkChat() {
         }
         const { profile } = await res.json();
         if (profile?.name) {
-          setUserName(profile.name);
-          // Also store the name in short-term memory
+          // Store the name in short-term memory
           storeInShortTermMemory(threadId, "userName", profile.name);
         }
 
@@ -371,36 +369,34 @@ export default function ShrinkChat() {
         const memoryContext = getMemoryContext();
         console.log("Memory context:", memoryContext ? "Present" : "None");
 
-        setTimeout(async () => {
-          // Call the API with memory context
-          console.log("Sending request to /api/shrink with memory context");
-          const res = await fetch("/api/shrink", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              prompt,
-              threadId,
-              memoryContext,
-            }),
-          });
+        // Call the API with memory context
+        console.log("Sending request to /api/shrink with memory context");
+        const res = await fetch("/api/shrink", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt,
+            threadId,
+            memoryContext,
+          }),
+        });
 
-          if (!res.ok) {
-            throw new Error(`API error: ${res.status}`);
-          }
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
 
-          const data = await res.json();
-          setMessages((prev) => [
-            ...prev,
-            { sender: "engine", text: data.response_text },
-          ]);
+        const data = await res.json();
+        setMessages((prev) => [
+          ...prev,
+          { sender: "engine", text: data.response_text },
+        ]);
 
-          // Store the assistant's response in both memory systems
-          await memorizeMessage(data.response_text, "assistant");
-          storeConversationMessage(threadId, "assistant", data.response_text);
+        // Store the assistant's response in both memory systems
+        await memorizeMessage(data.response_text, "assistant");
+        storeConversationMessage(threadId, "assistant", data.response_text);
 
-          if (!reminderSent) scheduleSilenceHandler();
-          setIsTyping(false);
-        }, 1500);
+        if (!reminderSent) scheduleSilenceHandler();
+        setIsTyping(false);
       }
     } catch (err) {
       console.error("Error in chat submission:", err);
@@ -430,11 +426,6 @@ export default function ShrinkChat() {
   /* ──────────────  render  ───────────── */
   return (
     <div className="w-full max-w-[42rem] mx-auto py-12 px-4 flex flex-col h-screen">
-      {userName && (
-        <div className="text-sm text-muted-foreground text-right mb-2">
-          Welcome back, {userName}.
-        </div>
-      )}
       <Card className="flex-1 flex overflow-hidden">
         <CardContent
           ref={scrollRef}
