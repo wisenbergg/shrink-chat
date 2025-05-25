@@ -11,143 +11,71 @@ export default function TalkPage() {
   const supabase = createBrowserClient();
   const { threadId: sessionThreadId, setThreadId } = useSession();
 
-  // Check authentication and record talk page visit
+  // Initialize authentication on page load
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeAuth = async () => {
       try {
         const auth = localStorage.getItem("authenticated");
         if (!auth) {
-          // Create a fallback authentication if not found
           localStorage.setItem("authenticated", "true");
-          console.log("Created fallback authentication");
+          console.log("Initialized authentication for onboarding");
         }
 
-        // Record talk visit in onboarding_progress
-        try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-
-          // If user exists, update onboarding progress
-          if (user) {
-            const { error } = await supabase.from("onboarding_progress").upsert(
-              {
-                user_id: user.id,
-                current_step: 4,
-                step4_completed_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id" }
-            );
-
-            if (error)
-              console.error(
-                "Error updating onboarding progress:",
-                JSON.stringify(error)
-              );
-          }
-        } catch (error) {
-          console.error(
-            "Error in onboarding talk:",
-            error instanceof Error ? error.message : JSON.stringify(error)
-          );
-          // Continue even if there's an error
+        // Ensure we have a threadId for the onboarding process
+        if (!sessionThreadId) {
+          const newThreadId = uuidv4();
+          setThreadId(newThreadId);
+          console.log("Initialized threadId for onboarding:", newThreadId);
         }
+
+        console.log("Talk loading page ready");
       } catch (error) {
-        console.error(
-          "Error in authentication check:",
-          error instanceof Error ? error.message : JSON.stringify(error)
-        );
-        // Create fallback authentication
+        console.error("Error initializing onboarding:", error);
+        // Ensure authentication is set even if there's an error
         localStorage.setItem("authenticated", "true");
       }
     };
 
-    checkAuth();
-  }, [supabase]);
-
-  useEffect(() => {
-    const createProfile = async () => {
-      setIsLoading(true);
-      try {
-        // Get threadId from session context or create a new one
-        const storedThreadId = sessionThreadId;
-        let threadId = storedThreadId;
-
-        if (!threadId) {
-          const newThreadId = uuidv4();
-          setThreadId(newThreadId);
-          threadId = newThreadId;
-          console.log("Created new threadId in loading:", newThreadId);
-        }
-
-        console.log("Attempting to create profile for threadId:", threadId);
-
-        // Create user profile
-        const { error } = await supabase.from("profiles").upsert(
-          {
-            thread_id: threadId,
-            name: "Anonymous",
-            emotional_tone: [],
-            concerns: [],
-          },
-          { onConflict: "thread_id" }
-        );
-
-        if (error) {
-          console.error("Error creating profile:", JSON.stringify(error));
-          throw error;
-        }
-
-        console.log("Profile created successfully for threadId:", threadId);
-
-        // Store onboarding completion in localStorage as a fallback
-        localStorage.setItem("onboarding_complete", "true");
-        localStorage.setItem("threadId", threadId);
-
-        // Redirect to chat page
-        router.push(`/?threadId=${threadId}`);
-      } catch (error) {
-        console.error(
-          "Error in onboarding completion:",
-          error instanceof Error ? error.message : JSON.stringify(error)
-        );
-
-        // If profile creation fails, create a new threadId and try again
-        const threadId = sessionThreadId || uuidv4();
-        if (!sessionThreadId) {
-          setThreadId(threadId);
-          console.log("Created fallback threadId:", threadId);
-        }
-
-        // Redirect to chat page anyway, the profile will be created later if needed
-        localStorage.setItem("threadId", threadId);
-        router.push(`/?threadId=${threadId}`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    createProfile();
-  }, [router, sessionThreadId, setThreadId, supabase]);
+    initializeAuth();
+  }, [sessionThreadId, setThreadId]);
 
   const handleComplete = async () => {
     setIsLoading(true);
 
     try {
-      // Get threadId from session context or create a new one
-      const storedThreadId = sessionThreadId;
-      let threadId = storedThreadId;
-
+      // Ensure we have a threadId
+      let threadId = sessionThreadId;
       if (!threadId) {
-        const newThreadId = uuidv4();
-        setThreadId(newThreadId);
-        threadId = newThreadId;
-        console.log("Created new threadId in handleComplete:", newThreadId);
+        threadId = uuidv4();
+        setThreadId(threadId);
+        console.log("Created new threadId for completion:", threadId);
       }
 
-      // Call the onboarding API endpoint
+      console.log("Completing onboarding for threadId:", threadId);
+
+      // Create or update the user profile
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          thread_id: threadId,
+          name: "Anonymous",
+          emotional_tone: [],
+          concerns: [],
+          onboarding_completed: true, // Mark onboarding as complete
+        },
+        { onConflict: "thread_id" }
+      );
+
+      if (profileError) {
+        console.warn("Profile upsert failed:", JSON.stringify(profileError));
+        // Continue anyway - we'll try the API fallback
+      } else {
+        console.log(
+          "Profile created/updated successfully with onboarding completed"
+        );
+      }
+
+      // Try the onboarding API as a fallback/additional step
       try {
-        console.log("Calling onboarding API with threadId:", threadId);
         const response = await fetch("/api/onboarding", {
           method: "POST",
           headers: {
@@ -159,67 +87,33 @@ export default function TalkPage() {
           }),
         });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.warn(
-            "Failed to complete onboarding via API, using fallback. Status:",
-            response.status,
-            "Error:",
-            JSON.stringify(errorData)
-          );
+        if (response.ok) {
+          console.log("Onboarding API call successful");
         } else {
-          console.log("Successfully completed onboarding via API");
+          console.warn("Onboarding API failed with status:", response.status);
         }
-      } catch (error) {
-        console.warn(
-          "Error calling onboarding API:",
-          error instanceof Error ? error.message : JSON.stringify(error)
-        );
+      } catch (apiError) {
+        console.warn("Onboarding API error:", apiError);
+        // This is OK - we already updated the profile directly
       }
 
-      // Try to update Supabase directly as a fallback
-      try {
-        console.log("Using fallback - updating onboarding_progress directly");
-        const { error } = await supabase.from("onboarding_progress").upsert(
-          {
-            user_id: threadId, // Use threadId as user_id
-            completed: true,
-            completed_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" }
-        );
-
-        if (error) {
-          console.warn("Fallback update failed:", JSON.stringify(error));
-        } else {
-          console.log("Successfully updated onboarding_progress via fallback");
-        }
-      } catch (err) {
-        console.warn(
-          "Fallback update error:",
-          err instanceof Error ? err.message : JSON.stringify(err)
-        );
-      }
-
-      // Store onboarding completion in localStorage as a fallback
+      // Store completion status in localStorage for immediate feedback
       localStorage.setItem("onboarding_complete", "true");
       localStorage.setItem("threadId", threadId);
-      sessionStorage.setItem("threadId", threadId);
 
-      // Add a delay to ensure the database update completes
-      setTimeout(() => {
-        // Redirect to root with threadId
-        router.push(`/?threadId=${threadId}`);
-      }, 1000);
-    } catch (error) {
-      console.error(
-        "Error completing onboarding:",
-        error instanceof Error ? error.message : JSON.stringify(error)
-      );
-      // Even if there's an error, redirect to root
-      const threadId = sessionThreadId || crypto.randomUUID();
-      localStorage.setItem("threadId", threadId);
+      // Navigate to the main chat interface
+      console.log("Redirecting to chat with threadId:", threadId);
       router.push(`/?threadId=${threadId}`);
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+
+      // Even if there's an error, try to proceed with a fallback
+      const fallbackThreadId = sessionThreadId || crypto.randomUUID();
+      localStorage.setItem("threadId", fallbackThreadId);
+      localStorage.setItem("onboarding_complete", "true");
+
+      console.log("Using fallback redirect with threadId:", fallbackThreadId);
+      router.push(`/?threadId=${fallbackThreadId}`);
     } finally {
       setIsLoading(false);
     }
