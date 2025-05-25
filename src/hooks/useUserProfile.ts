@@ -25,21 +25,10 @@ export function useUserProfile(threadId: string | null) {
       return;
     }
 
-    // Check localStorage first for onboarding status
-    const localOnboardingComplete =
-      localStorage.getItem("onboarding_complete") === "true";
-
-    // If we have a local flag, use it to create an initial profile
-    if (localOnboardingComplete && !profile) {
-      setProfile({
-        thread_id: threadId,
-        onboarding_completed: true,
-      });
-    }
-
     // Only fetch from API if we haven't already fetched
     if (!fetchedOnce) {
       setLoading(true);
+      
       fetch(`/api/profile/${threadId}`)
         .then((res) => {
           if (!res.ok) {
@@ -58,30 +47,42 @@ export function useUserProfile(threadId: string | null) {
             if (json.profile?.onboarding_completed) {
               localStorage.setItem("onboarding_complete", "true");
             }
+          } else {
+            // If API doesn't have profile, check localStorage fallback
+            const localOnboardingComplete =
+              localStorage.getItem("onboarding_complete") === "true";
+              
+            if (localOnboardingComplete) {
+              setProfile({
+                thread_id: threadId,
+                onboarding_completed: true,
+              });
+            }
           }
         })
         .catch((error) => {
           console.error("Error fetching profile:", error);
 
-          // If API fails but we have local flag, ensure profile has onboarding_completed
-          if (
-            localOnboardingComplete &&
-            profile &&
-            !profile.onboarding_completed
-          ) {
-            setProfile((prev) => ({
-              ...prev,
+          // If API fails, check localStorage fallback
+          const localOnboardingComplete =
+            localStorage.getItem("onboarding_complete") === "true";
+            
+          if (localOnboardingComplete) {
+            setProfile({
               thread_id: threadId,
               onboarding_completed: true,
-            }));
+            });
           }
         })
         .finally(() => {
           setLoading(false);
           setFetchedOnce(true);
         });
+    } else {
+      // If we already fetched, just ensure loading is false
+      setLoading(false);
     }
-  }, [threadId, fetchedOnce, profile]);
+  }, [threadId, fetchedOnce]);
 
   return { profile, loading };
 }
