@@ -1,12 +1,13 @@
 // File: app/page.tsx
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ShrinkChat from "@/components/ShrinkChat";
 import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { SessionDebugger } from "@/components/SessionDebugger";
+import StackedLogoLockup from "./components/StackedLogoLockup";
+import { isValidAuthState, clearAuthState } from "@/lib/authUtils";
 
 export default function HomePage() {
   const router = useRouter();
@@ -17,10 +18,15 @@ export default function HomePage() {
   // 1) Check authentication
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const auth = localStorage.getItem("authenticated");
-    if (!auth) {
+
+    // Check if authentication state is valid
+    if (!isValidAuthState()) {
+      // Clear any stale/incomplete auth state
+      clearAuthState();
+      console.log("🔄 Redirecting to login - invalid auth state");
       router.replace("/login");
     } else {
+      console.log("✅ Valid authentication state found");
       setIsAuth(true);
     }
   }, [router]);
@@ -57,8 +63,8 @@ export default function HomePage() {
   // 5) All checks passed — show the chat!
   return (
     <div className="relative flex flex-col h-screen">
-      <div className="absolute top-4 left-4">
-        <Image src="/Asset 4@2x.png" alt="Logo" width={48} height={40} />
+      <div className="logo-position logo-container">
+        <StackedLogoLockup />
       </div>
       <div className="flex flex-1 overflow-hidden">
         <ShrinkChat />

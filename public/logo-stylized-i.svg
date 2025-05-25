@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" width="200" height="40">
+  <defs>
+    <style>
+      .logo-text-normal { 
+        font-family: 'Apfel Grotezk', -apple-system, BlinkMacSystemFont, sans-serif; 
+        font-weight: 300; 
+        font-size: 24px; 
+        fill: #1e293b;
+        letter-spacing: -0.02em;
+      }
+      .logo-text-emphasis { 
+        font-family: 'Apfel Grotezk', -apple-system, BlinkMacSystemFont, sans-serif; 
+        font-weight: 500; 
+        font-size: 24px; 
+        fill: #3B9CFF;
+        letter-spacing: -0.02em;
+      }
+    </style>
+  </defs>
+  <text x="100" y="28" text-anchor="middle">
+    <tspan class="logo-text-normal">when</tspan><tspan class="logo-text-emphasis">I</tspan><tspan class="logo-text-normal">was</tspan>
+  </text>
+</svg>

@@ -1,0 +1,281 @@
+/* Enhanced Onboarding Styles */
+
+/* Apfel Grotezk font family application */
+.onboarding-container {
+  font-family: "Apfel Grotezk", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+}
+
+/* Blue highlight color for buttons and interactive elements */
+:root {
+  --onboarding-blue: #1976d2;
+  --onboarding-blue-hover: #1565c0;
+  --onboarding-blue-light: #e3f2fd;
+}
+
+/* Progress indicator for onboarding flow */
+.onboarding-progress {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 50;
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--muted));
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background-color: var(--onboarding-blue);
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(59, 156, 255, 0.4);
+}
+
+.progress-dot.completed {
+  background-color: var(--onboarding-blue);
+}
+
+/* Enhanced button styling with blue highlights */
+.onboarding-button {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 20px -2px rgba(59, 156, 255, 0.2);
+  background: var(--onboarding-blue) !important;
+  border: none;
+}
+
+.onboarding-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px -2px rgba(59, 156, 255, 0.4);
+  background: var(--onboarding-blue-hover) !important;
+}
+
+.onboarding-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.6s;
+}
+
+.onboarding-button:hover::before {
+  left: 100%;
+}
+
+/* Breathing animation for primary text */
+.breathing-text {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+/* Gentle fade-in for content */
+.gentle-fade-in {
+  animation: gentleFadeIn 1.2s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes gentleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Gentle pulse animation for icons */
+.gentle-pulse {
+  animation: gentlePulse 3s ease-in-out infinite;
+}
+
+@keyframes gentlePulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+    filter: brightness(1.1);
+  }
+}
+
+/* Loading dots animation */
+.loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.loading-dots div {
+  width: 4px;
+  height: 4px;
+  background-color: currentColor;
+  border-radius: 50%;
+  animation: loadingDots 1.4s ease-in-out infinite both;
+}
+
+.loading-dots div:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.loading-dots div:nth-child(2) {
+  animation-delay: -0.16s;
+}
+.loading-dots div:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes loadingDots {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Enhanced card styling */
+.onboarding-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.dark .onboarding-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Enhanced layout spacing */
+.onboarding-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem 1rem;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+}
+
+/* Choice button styling with blue highlights */
+.choice-button {
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid transparent;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.choice-button:hover {
+  border-color: var(--onboarding-blue);
+  background: var(--onboarding-blue-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(59, 156, 255, 0.15);
+}
+
+.choice-button:hover .text-primary {
+  color: var(--onboarding-blue) !important;
+}
+
+.choice-button:hover .group-hover\:text-primary {
+  color: var(--onboarding-blue) !important;
+}
+
+.choice-button:hover .group-hover\:text-primary\/70 {
+  color: rgba(59, 156, 255, 0.7) !important;
+}
+
+/* Completion button special styling */
+.completion-button {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary)),
+    hsl(var(--primary) / 0.8)
+  );
+}
+
+.completion-button:hover:not(:disabled) {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Privacy icon styling */
+.privacy-icon {
+  animation: gentleFadeIn 1s ease-out 0.5s forwards;
+  opacity: 0;
+}
+
+/* Heart icon styling */
+.heart-icon {
+  animation: gentleFadeIn 1s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Heart pulse animation with blue color variations */
+.heart-icon .gentle-pulse {
+  color: #3b82f6; /* Base blue-500 */
+  transition: color 0.3s ease;
+}
+
+/* Enhanced hover primary color */
+.hover\:bg-primary-hover:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .onboarding-card {
+    margin: 1rem;
+    padding: 2rem 1.5rem;
+  }
+
+  .onboarding-progress {
+    top: 1rem;
+  }
+
+  .choice-button {
+    padding: 1rem;
+  }
+}

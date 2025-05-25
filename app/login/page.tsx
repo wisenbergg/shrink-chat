@@ -2,7 +2,6 @@
 
 import type React from "react";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -15,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/context/SessionContext";
+import StackedLogoLockup from "../components/StackedLogoLockup";
+import { setAuthState } from "@/lib/authUtils";
 
 export default function LoginPage() {
   const [password, setPassword] = useState("");
@@ -41,9 +42,9 @@ export default function LoginPage() {
       if (response.ok) {
         const { threadId } = await response.json();
 
-        // Store authentication state
-        localStorage.setItem("authenticated", "true");
-        // Use session context instead of direct localStorage
+        // Store authentication state using utility
+        setAuthState(threadId);
+        // Use session context as well
         setThreadId(threadId);
         console.log("Login successful, threadId set:", threadId);
 
@@ -63,8 +64,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="absolute top-4 left-4">
-        <Image src="/logo.svg" alt="Logo" width={64} height={64} />
+      <div className="logo-position logo-container">
+        <StackedLogoLockup />
       </div>
       <Card className="w-full max-w-sm bg-card">
         <form onSubmit={handleSubmit} className="flex flex-col">

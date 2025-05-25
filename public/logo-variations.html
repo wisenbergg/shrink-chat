@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logo Variations - whenIwas</title>
+    <style>
+      @import url("/fonts.css");
+
+      body {
+        font-family: "Apfel Grotezk", -apple-system, BlinkMacSystemFont,
+          sans-serif;
+        background: #f8fafc;
+        margin: 0;
+        padding: 40px;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        text-align: center;
+        color: #1e293b;
+        margin-bottom: 2rem;
+      }
+
+      .logo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+
+      .logo-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .logo-preview {
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        background: #f1f5f9;
+        border-radius: 8px;
+      }
+
+      .logo-title {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+      }
+
+      .logo-description {
+        color: #64748b;
+        font-size: 0.9rem;
+      }
+
+      /* Logo Styles */
+      .logo-text-only {
+        font-family: "Apfel Grotezk", sans-serif;
+        font-weight: 500;
+        font-size: 2rem;
+        color: #1e293b;
+      }
+
+      .logo-text-blue {
+        font-family: "Apfel Grotezk", sans-serif;
+        font-weight: 500;
+        font-size: 2rem;
+        color: #3b9cff;
+      }
+
+      .logo-gradient {
+        font-family: "Apfel Grotezk", sans-serif;
+        font-weight: 600;
+        font-size: 2rem;
+        background: linear-gradient(135deg, #3b9cff 0%, #2a8ff0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .logo-minimal {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+
+      .logo-dot {
+        width: 8px;
+        height: 8px;
+        background: #3b9cff;
+        border-radius: 50%;
+      }
+
+      .logo-icon-text {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        justify-content: center;
+      }
+
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: #3b9cff;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Logo Variations for whenIwas</h1>
+
+      <div class="logo-grid">
+        <!-- Variation 1: Text Only -->
+        <div class="logo-card">
+          <div class="logo-preview">
+            <div class="logo-text-only">whenIwas</div>
+          </div>
+          <div class="logo-title">Text Only - Classic</div>
+          <div class="logo-description">
+            Simple, clean typography using Apfel Grotezk. Minimal and
+            professional.
+          </div>
+        </div>
+
+        <!-- Variation 2: Blue Text -->
+        <div class="logo-card">
+          <div class="logo-preview">
+            <div class="logo-text-blue">whenIwas</div>
+          </div>
+          <div class="logo-title">Blue Text</div>
+          <div class="logo-description">
+            Same typography but in your brand blue (#3B9CFF). More distinctive.
+          </div>
+        </div>
+
+        <!-- Variation 3: Gradient Text -->
+        <div class="logo-card">
+          <div class="logo-preview">
+            <div class="logo-gradient">whenIwas</div>
+          </div>
+          <div class="logo-title">Gradient Text</div>
+          <div class="logo-description">
+            Subtle gradient effect for a modern, premium feel.
+          </div>
+        </div>
+
+        <!-- Variation 4: Minimal with Dot -->
+        <div class="logo-card">
+          <div class="logo-preview">
+            <div class="logo-minimal">
+              <span class="logo-text-only">whenIwas</span>
+              <span class="logo-dot"></span>
+            </div>
+          </div>
+          <div class="logo-title">Minimal + Dot</div>
+          <div class="logo-description">
+            Clean text with a small blue accent dot. Subtle branding element.
+          </div>
+        </div>
+
+        <!-- Variation 5: Icon + Text -->
+        <div class="logo-card">
+          <div class="logo-preview">
+            <div class="logo-icon-text">
+              <div class="logo-icon">w</div>
+              <span class="logo-text-only">whenIwas</span>
+            </div>
+          </div>
+          <div class="logo-title">Icon + Text</div>
+          <div class="logo-description">
+            Blue icon with 'w' initial plus text. Good for app icons and
+            branding.
+          </div>
+        </div>
+
+        <!-- Variation 6: Stylized Text -->
+        <div class="logo-card">
+          <div class="logo-preview">
+            <div
+              style="
+                font-family: 'Apfel Grotezk', sans-serif;
+                font-weight: 300;
+                font-size: 2rem;
+                color: #1e293b;
+                letter-spacing: -0.02em;
+              "
+            >
+              when<span style="color: #3b9cff; font-weight: 500">I</span>was
+            </div>
+          </div>
+          <div class="logo-title">Stylized 'I'</div>
+          <div class="logo-description">
+            Emphasizes the personal 'I' with blue color and weight change.
+          </div>
+        </div>
+      </div>
+
+      <div
+        style="
+          background: white;
+          border-radius: 12px;
+          padding: 2rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <h2 style="color: #1e293b; margin-bottom: 1rem">Design Notes</h2>
+        <ul style="color: #64748b; line-height: 1.8">
+          <li>
+            <strong>Typography:</strong> All variations use your Apfel Grotezk
+            typeface for consistency
+          </li>
+          <li>
+            <strong>Color:</strong> Blue (#3B9CFF) matches your onboarding
+            system highlights
+          </li>
+          <li>
+            <strong>Scalability:</strong> All designs work well at different
+            sizes (16px to 64px+)
+          </li>
+          <li>
+            <strong>Versatility:</strong> Clean designs that work on light and
+            dark backgrounds
+          </li>
+          <li>
+            <strong>Performance:</strong> Text-based logos load faster and scale
+            perfectly
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>

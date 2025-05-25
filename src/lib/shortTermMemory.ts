@@ -60,6 +60,9 @@ export function extractAndStoreUserName(
     /i'm (\w+)/i,
     /call me (\w+)/i,
     /name'?s (\w+)/i,
+    /they call me (\w+)/i,
+    /people know me as (\w+)/i,
+    /(\w+) is my name/i,
   ];
 
   for (const pattern of patterns) {
@@ -67,8 +70,11 @@ export function extractAndStoreUserName(
     if (match && match[1]) {
       const name = match[1];
       // Only store if it's a real name and not "Anonymous" (case-insensitive)
-      if (name.toLowerCase() !== "anonymous") {
+      if (name.toLowerCase() !== "anonymous" && name.length > 1) {
         storeInShortTermMemory(threadId, "userName", name);
+        console.log(
+          `[shortTermMemory] Extracted and stored user name: ${name}`
+        );
         break;
       }
     }
@@ -137,8 +143,8 @@ export function storeConversationMessage(
   // Add the new message
   recentMessages.push({ role, content });
 
-  // Keep only the last 10 messages
-  const trimmedMessages = recentMessages.slice(-10);
+  // Keep only the last 15 messages instead of 10 for better context
+  const trimmedMessages = recentMessages.slice(-15);
 
   // Store back
   threadMemory[key] = {
@@ -149,10 +155,28 @@ export function storeConversationMessage(
   // Update the cache
   shortTermMemoryCache.set(threadId, threadMemory);
 
-  // If it's a user message, check for name
+  // If it's a user message, perform enhanced analysis
   if (role === "user") {
+    // Extract and store name
     extractAndStoreUserName(threadId, content);
+
+    // Extract and store conversation insights
+    extractConversationInsights(threadId, content, role);
   }
+
+  // Update conversation length for personalization
+  const conversationLength = getFromShortTermMemory(
+    threadId,
+    "conversationLength"
+  );
+  const currentLength = conversationLength
+    ? parseInt(conversationLength, 10)
+    : 0;
+  storeInShortTermMemory(
+    threadId,
+    "conversationLength",
+    String(currentLength + 1)
+  );
 }
 
 /**
@@ -185,4 +209,141 @@ export function handleNameQuery(
   const name = isNameQuery ? getUserNameFromShortTermMemory(threadId) : null;
 
   return { isNameQuery, name };
+}
+
+/**
+ * Extract and store conversation insights from messages
+ * This function analyzes messages for topics, emotions, and other contextual clues
+ */
+export function extractConversationInsights(
+  threadId: string,
+  message: string,
+  role: "user" | "assistant"
+): void {
+  if (!threadId || !message || role !== "user") return;
+
+  const lowerMessage = message.toLowerCase();
+
+  // Extract topics
+  const topicPatterns = {
+    work: [/\b(work|job|career|boss|coworker|colleague|office|workplace)\b/i],
+    family: [
+      /\b(family|mom|dad|mother|father|parent|sibling|brother|sister|child|kid)\b/i,
+    ],
+    health: [
+      /\b(health|sick|ill|disease|doctor|hospital|symptom|pain|medication)\b/i,
+    ],
+    mental_health: [
+      /\b(anxiety|depression|stress|therapy|counseling|psychiatrist|psychologist)\b/i,
+    ],
+    relationships: [
+      /\b(relationship|partner|dating|marriage|girlfriend|boyfriend|spouse|divorce|breakup)\b/i,
+    ],
+    sleep: [
+      /\b(sleep|insomnia|tired|exhausted|rest|nap|fatigue|dream|nightmare)\b/i,
+    ],
+    finance: [
+      /\b(money|finance|debt|budget|expense|income|saving|investment)\b/i,
+    ],
+    education: [
+      /\b(school|college|university|study|student|class|course|degree|learn)\b/i,
+    ],
+  };
+
+  // Extract emotions
+  const emotionPatterns = {
+    happy: [/\b(happy|joy|glad|excited|delighted|pleased|cheerful)\b/i],
+    sad: [
+      /\b(sad|unhappy|depressed|down|miserable|grief|sorrow|upset|blue)\b/i,
+    ],
+    angry: [/\b(angry|mad|furious|upset|irritated|annoyed|frustrated)\b/i],
+    afraid: [
+      /\b(afraid|scared|fearful|terrified|anxious|worried|panic|phobia)\b/i,
+    ],
+    confused: [
+      /\b(confused|puzzled|perplexed|unsure|uncertain|doubt|bewildered)\b/i,
+    ],
+    stressed: [/\b(stressed|overwhelmed|pressured|burdened|overloaded)\b/i],
+    hopeful: [
+      /\b(hopeful|optimistic|looking forward|expecting|anticipating)\b/i,
+    ],
+  };
+
+  // Process topics
+  const detectedTopics: string[] = [];
+  Object.entries(topicPatterns).forEach(([topic, patterns]) => {
+    if (patterns.some((pattern) => pattern.test(lowerMessage))) {
+      detectedTopics.push(topic);
+    }
+  });
+
+  // Process emotions
+  const detectedEmotions: string[] = [];
+  Object.entries(emotionPatterns).forEach(([emotion, patterns]) => {
+    if (patterns.some((pattern) => pattern.test(lowerMessage))) {
+      detectedEmotions.push(emotion);
+    }
+  });
+
+  // Store detected topics
+  if (detectedTopics.length > 0) {
+    const existingTopics =
+      getFromShortTermMemory(threadId, "conversationTopics") || "";
+    const existingTopicsArray = existingTopics ? existingTopics.split(",") : [];
+    const allTopics = [...new Set([...existingTopicsArray, ...detectedTopics])];
+    storeInShortTermMemory(threadId, "conversationTopics", allTopics.join(","));
+    console.log(`[shortTermMemory] Updated topics: ${allTopics.join(", ")}`);
+  }
+
+  // Store detected emotions
+  if (detectedEmotions.length > 0) {
+    const existingEmotions =
+      getFromShortTermMemory(threadId, "userEmotions") || "";
+    const existingEmotionsArray = existingEmotions
+      ? existingEmotions.split(",")
+      : [];
+    const allEmotions = [
+      ...new Set([...existingEmotionsArray, ...detectedEmotions]),
+    ];
+    storeInShortTermMemory(threadId, "userEmotions", allEmotions.join(","));
+    console.log(
+      `[shortTermMemory] Updated emotions: ${allEmotions.join(", ")}`
+    );
+  }
+
+  // Extract and store user preferences
+  if (
+    lowerMessage.includes("like") ||
+    lowerMessage.includes("enjoy") ||
+    lowerMessage.includes("love")
+  ) {
+    const preferencePatterns = [
+      /i (?:really )?(like|love|enjoy) (\w+(?:\s\w+){0,3})/i,
+      /(\w+(?:\s\w+){0,3}) (?:is|are) my favorite/i,
+    ];
+
+    for (const pattern of preferencePatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        const preference = match[2] || match[1];
+        const existingPreferences =
+          getFromShortTermMemory(threadId, "userPreferences") || "";
+        const existingPreferencesArray = existingPreferences
+          ? existingPreferences.split(",")
+          : [];
+
+        if (!existingPreferencesArray.includes(preference)) {
+          existingPreferencesArray.push(preference);
+          storeInShortTermMemory(
+            threadId,
+            "userPreferences",
+            existingPreferencesArray.join(",")
+          );
+          console.log(
+            `[shortTermMemory] Stored user preference: ${preference}`
+          );
+        }
+      }
+    }
+  }
 }

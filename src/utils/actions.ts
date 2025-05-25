@@ -2,8 +2,6 @@
 "use server";
 
 import { createServerClient } from "@/lib/supabaseClient/server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 
@@ -26,9 +24,7 @@ async function ensureRows(id: string) {
       { thread_id: id, onboarding_completed: false },
       { onConflict: "thread_id" }
     );
-  await supabase
-    .from("onboarding_progress")
-    .upsert({ user_id: id, current_step: 1 }, { onConflict: "user_id" });
+  // Note: Removed onboarding_progress upsert - using profiles.onboarding_completed instead
 }
 
 /*──────────────── getUserId ──────────────*/
@@ -49,58 +45,32 @@ export async function getUserId(): Promise<string> {
 }
 
 /*───────── onboarding helpers ─────────*/
+// NOTE: These functions are deprecated in favor of the new thread-based system
+// They remain for backward compatibility but are no longer used in the main flow
+
 export async function updateOnboardingProgress(
   step: number,
   response?: string
 ): Promise<boolean> {
-  try {
-    const userId = await getUserId();
-    const supabase = createServerClient();
-
-    await supabase.from("onboarding_progress").upsert(
-      {
-        user_id: userId,
-        current_step: step + 1,
-        [`step${step}_completed_at`]: new Date().toISOString(),
-      },
-      { onConflict: "user_id" }
-    );
-
-    if (response) {
-      await supabase.from("onboarding_responses").insert({
-        user_id: userId,
-        step_number: step,
-        response,
-      });
-    }
-
-    revalidatePath("/onboarding/welcome");
-    revalidatePath("/onboarding/privacy");
-    revalidatePath("/onboarding/choose-mode");
-    return true;
-  } catch (err) {
-    console.error("updateOnboardingProgress error:", err);
-    return false;
-  }
+  console.warn(
+    "updateOnboardingProgress is deprecated - use profiles.onboarding_completed instead"
+  );
+  // Suppress unused parameter warnings
+  void step;
+  void response;
+  return true; // Always return true to avoid breaking existing code
 }
 
 export async function getOnboardingProgress() {
-  try {
-    const userId = await getUserId();
-    const supabase = createServerClient();
-    const { data } = await supabase
-      .from("onboarding_progress")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    return data;
-  } catch (err) {
-    console.error("getOnboardingProgress error:", err);
-    return null;
-  }
+  console.warn(
+    "getOnboardingProgress is deprecated - use profiles.onboarding_completed instead"
+  );
+  return null; // Return null to indicate no legacy progress
 }
 
 export async function completeOnboarding(): Promise<void> {
-  const ok = await updateOnboardingProgress(3);
-  if (ok) redirect("/");
+  console.warn(
+    "completeOnboarding is deprecated - use markOnboardingComplete from sessionMemory instead"
+  );
+  // Don't redirect - let the new system handle it
 }

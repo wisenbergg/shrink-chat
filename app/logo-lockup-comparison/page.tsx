@@ -191,8 +191,8 @@ export default function LogoLockupComparison() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-muted-foreground mb-6">
-              Choose your preferred lockup style and I&apos;ll implement it across
-              your entire application
+              Choose your preferred lockup style and I&apos;ll implement it
+              across your entire application
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button

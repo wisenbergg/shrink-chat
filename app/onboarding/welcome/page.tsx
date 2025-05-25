@@ -6,6 +6,25 @@ import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabaseClient/browser";
 import { useSession } from "@/context/SessionContext";
 import { v4 as uuidv4 } from "uuid";
+import "../onboarding-styles.css";
+
+// Progress indicator component
+function ProgressIndicator({ currentStep }: { currentStep: number }) {
+  const steps = 5; // welcome, overview, privacy, choose-mode, talk
+
+  return (
+    <div className="onboarding-progress">
+      {Array.from({ length: steps }, (_, i) => (
+        <div
+          key={i}
+          className={`progress-dot ${
+            i < currentStep ? "completed" : i === currentStep ? "active" : ""
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -43,20 +62,28 @@ export default function WelcomePage() {
   }, [router, supabase, sessionThreadId, setThreadId]);
 
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="flex flex-col w-full max-w-2xl">
-        <div className="flex items-center justify-center flex-1 mb-8">
-          <h2 className="text-2xl font-medium text-center animate-fade-in text-foreground">
-            Hey. I&apos;m really glad you&apos;re here.
-          </h2>
-        </div>
-        <div className="flex items-center justify-center">
-          <Link
-            href="/onboarding/privacy"
-            className="inline-flex items-center justify-center w-32 h-10 px-6 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary-hover transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 btn-hover-effect"
-          >
-            Next
-          </Link>
+    <div className="onboarding-container">
+      <ProgressIndicator currentStep={0} />
+
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="onboarding-card p-12 w-full max-w-2xl">
+          <div className="flex items-center justify-center flex-1 mb-12">
+            {/* Enhanced welcome message with breathing animation */}
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl font-medium breathing-text text-foreground">
+                Hey, I&apos;m really happy you&apos;re here.
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center">
+            <Link
+              href="/onboarding/overview"
+              className="onboarding-button inline-flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full bg-primary text-primary-foreground hover:bg-primary-hover transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[140px]"
+            >
+              Continue
+            </Link>
+          </div>
         </div>
       </div>
     </div>

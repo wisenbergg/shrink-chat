@@ -166,18 +166,18 @@ export default function ShrinkChat() {
   const turnCountRef = useRef(0); // Track turn count for messages
 
   /* ──────────────  helpers  ───────────── */
-  const logMessageWithTurn = useCallback(async (
-    role: "user" | "assistant",
-    content: string
-  ): Promise<string> => {
-    turnCountRef.current += 1;
-    return await logChatClient({
-      threadId,
-      turn: turnCountRef.current,
-      role,
-      content,
-    });
-  }, [threadId]);
+  const logMessageWithTurn = useCallback(
+    async (role: "user" | "assistant", content: string): Promise<string> => {
+      turnCountRef.current += 1;
+      return await logChatClient({
+        threadId,
+        turn: turnCountRef.current,
+        role,
+        content,
+      });
+    },
+    [threadId]
+  );
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
       clearTimeout(silenceTimerRef.current);

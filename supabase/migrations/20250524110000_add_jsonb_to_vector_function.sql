@@ -1,4 +1,7 @@
 -- Add jsonb_to_vector function to convert JSON to vector
+-- First drop the existing function if it exists
+DROP FUNCTION IF EXISTS public.jsonb_to_vector(jsonb);
+
 CREATE OR REPLACE FUNCTION public.jsonb_to_vector(embedding_json jsonb)
 RETURNS vector
 LANGUAGE plpgsql

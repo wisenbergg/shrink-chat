@@ -2,11 +2,11 @@
 import "./globals.css";
 import "./fonts.css"; // Import custom fonts CSS
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ClientLayout } from "./client-layout";
+import StackedLogoLockup from "./components/StackedLogoLockup";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -72,14 +72,8 @@ export default function RootLayout({
         `}
       >
         <ClientLayout>
-          <div className="absolute z-10 top-4 left-4">
-            <Image
-              src="/Asset 4@2x.png"
-              alt="whenIwas logo"
-              width={48}
-              height={40}
-              priority
-            />
+          <div className="logo-position logo-container">
+            <StackedLogoLockup />
           </div>
           {children}
           <Analytics />

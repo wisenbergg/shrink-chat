@@ -8,7 +8,7 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
+    --primary: 207 90% 54%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -44,7 +44,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 207 90% 61%;
     --primary-foreground: 0 0% 9%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
@@ -119,6 +119,32 @@
   .btn-hover-effect:hover {
     transform: translateY(-2px) scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Logo styling enhancements */
+  .logo-container {
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .logo-container:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  }
+
+  /* Logo positioning improvements */
+  .logo-position {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    z-index: 10;
+  }
+
+  @media (max-width: 640px) {
+    .logo-position {
+      top: 1rem;
+      left: 1rem;
+    }
   }
 }
 
