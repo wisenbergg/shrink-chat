@@ -28,7 +28,7 @@ export function useUserProfile(threadId: string | null) {
     // Only fetch from API if we haven't already fetched
     if (!fetchedOnce) {
       setLoading(true);
-      
+
       fetch(`/api/profile/${threadId}`)
         .then((res) => {
           if (!res.ok) {
@@ -51,7 +51,7 @@ export function useUserProfile(threadId: string | null) {
             // If API doesn't have profile, check localStorage fallback
             const localOnboardingComplete =
               localStorage.getItem("onboarding_complete") === "true";
-              
+
             if (localOnboardingComplete) {
               setProfile({
                 thread_id: threadId,
@@ -66,7 +66,7 @@ export function useUserProfile(threadId: string | null) {
           // If API fails, check localStorage fallback
           const localOnboardingComplete =
             localStorage.getItem("onboarding_complete") === "true";
-            
+
           if (localOnboardingComplete) {
             setProfile({
               thread_id: threadId,

@@ -66,10 +66,16 @@ async function testOnboardingRedirectFix() {
     // 3. Test the API endpoint that main page uses to check onboarding status
     console.log("\n3. 🔍 Testing profile API endpoint...");
 
-    const response = await fetch(`http://localhost:3000/api/profile/${threadId}`);
+    const response = await fetch(
+      `http://localhost:3000/api/profile/${threadId}`
+    );
 
     if (!response.ok) {
-      console.log("❌ Profile API failed:", response.status, response.statusText);
+      console.log(
+        "❌ Profile API failed:",
+        response.status,
+        response.statusText
+      );
       return;
     }
 
@@ -81,19 +87,23 @@ async function testOnboardingRedirectFix() {
 
     // 4. Verify the localStorage simulation
     console.log("\n4. 🗂️ Testing localStorage fallback logic...");
-    
+
     // This simulates what the talk page now does:
     // localStorage.setItem("onboarding_complete", "true");
-    
-    console.log("✅ localStorage would be set to: 'onboarding_complete' = 'true'");
+
+    console.log(
+      "✅ localStorage would be set to: 'onboarding_complete' = 'true'"
+    );
     console.log("✅ This provides immediate fallback for useUserProfile hook");
 
     // 5. Test what happens when main page loads
     console.log("\n5. 🏠 Simulating main page load behavior...");
-    
+
     console.log("Main page logic:");
     console.log("  → useUserProfile checks localStorage first");
-    console.log("  → If localStorage = 'true', creates profile with onboarding_completed: true");
+    console.log(
+      "  → If localStorage = 'true', creates profile with onboarding_completed: true"
+    );
     console.log("  → useOnboardingStatus sees completion and allows access");
     console.log("  → No redirect back to /onboarding/welcome");
 
@@ -109,11 +119,14 @@ async function testOnboardingRedirectFix() {
     console.log("✅ Main page should no longer redirect back to onboarding");
 
     console.log("\n🚀 FIXES IMPLEMENTED:");
-    console.log("1. Talk page now sets localStorage('onboarding_complete', 'true')");
-    console.log("2. useUserProfile hook prioritizes localStorage for immediate feedback");
+    console.log(
+      "1. Talk page now sets localStorage('onboarding_complete', 'true')"
+    );
+    console.log(
+      "2. useUserProfile hook prioritizes localStorage for immediate feedback"
+    );
     console.log("3. useOnboardingStatus hook checks localStorage as fallback");
     console.log("4. Redirect loop should be eliminated");
-
   } catch (error) {
     console.error("❌ Test failed:", error);
   }

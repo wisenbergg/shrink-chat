@@ -113,7 +113,7 @@ export default function TalkPage() {
 
       // Set localStorage immediately so useUserProfile hook can see completion status
       localStorage.setItem("onboarding_complete", "true");
-      
+
       // Add a delay to ensure the database update completes
       setTimeout(() => {
         // Redirect to root with threadId
