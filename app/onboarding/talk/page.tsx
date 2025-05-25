@@ -111,7 +111,9 @@ export default function TalkPage() {
         // Continue despite the error
       }
 
-      // No need to store in localStorage, the session context handles that
+      // Set localStorage immediately so useUserProfile hook can see completion status
+      localStorage.setItem("onboarding_complete", "true");
+      
       // Add a delay to ensure the database update completes
       setTimeout(() => {
         // Redirect to root with threadId
