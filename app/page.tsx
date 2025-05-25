@@ -29,7 +29,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!onboardingLoading && isAuth && profile) {
       // If onboarding is not complete, redirect to the first step
-      if (!profile.onboarding_complete) {
+      if (!profile.onboarding_completed) {
         router.replace("/onboarding/welcome");
       }
     }

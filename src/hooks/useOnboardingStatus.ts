@@ -8,7 +8,7 @@ import { useUserProfile } from "./useUserProfile";
 /**
  * Guards your app so that:
  * - If no profile or onboarding not complete → redirect to /onboarding/welcome
- * - If profile exists and onboarding_complete → allow access to protected routes
+ * - If profile exists and onboarding_completed → allow access to protected routes
  *
  * IMPORTANT: This hook no longer automatically redirects to home (/)
  */
@@ -32,7 +32,7 @@ export function useOnboardingStatus() {
     // If onboarding is not complete and we're not already on an onboarding page, redirect
     if (
       !isOnOnboardingPage &&
-      !profile?.onboarding_complete &&
+      !profile?.onboarding_completed &&
       !localOnboardingComplete
     ) {
       router.replace("/onboarding/welcome");

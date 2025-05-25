@@ -7,11 +7,11 @@ export type UserProfile = {
   name?: string;
   emotional_tone?: string[];
   concerns?: string[];
-  onboarding_complete?: boolean;
+  onboarding_completed?: boolean;
 };
 
 /**
- * Fetches the user profile (including onboarding_complete flag) for a threadId.
+ * Fetches the user profile (including onboarding_completed flag) for a threadId.
  * Includes localStorage fallback for onboarding status.
  */
 export function useUserProfile(threadId: string | null) {
@@ -33,7 +33,7 @@ export function useUserProfile(threadId: string | null) {
     if (localOnboardingComplete && !profile) {
       setProfile({
         thread_id: threadId,
-        onboarding_complete: true,
+        onboarding_completed: true,
       });
     }
 
@@ -55,7 +55,7 @@ export function useUserProfile(threadId: string | null) {
             setProfile(json.profile);
 
             // If API says onboarding is complete, update localStorage
-            if (json.profile?.onboarding_complete) {
+            if (json.profile?.onboarding_completed) {
               localStorage.setItem("onboarding_complete", "true");
             }
           }
@@ -63,16 +63,16 @@ export function useUserProfile(threadId: string | null) {
         .catch((error) => {
           console.error("Error fetching profile:", error);
 
-          // If API fails but we have local flag, ensure profile has onboarding_complete
+          // If API fails but we have local flag, ensure profile has onboarding_completed
           if (
             localOnboardingComplete &&
             profile &&
-            !profile.onboarding_complete
+            !profile.onboarding_completed
           ) {
             setProfile((prev) => ({
               ...prev,
               thread_id: threadId,
-              onboarding_complete: true,
+              onboarding_completed: true,
             }));
           }
         })

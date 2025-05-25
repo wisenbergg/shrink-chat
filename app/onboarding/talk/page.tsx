@@ -83,7 +83,9 @@ export default function TalkPage() {
         if (error) {
           console.warn("Fallback profile update failed:", error);
         } else {
-          console.log("Successfully marked onboarding complete in profiles table");
+          console.log(
+            "Successfully marked onboarding complete in profiles table"
+          );
         }
       } catch (err) {
         console.warn("Fallback update error:", err);

@@ -71,8 +71,6 @@ export default function ShrinkChat() {
         // Generate new UUID
         const newId = uuid();
         sessionStorage.setItem("threadId", newId);
-        // Use context instead of direct localStorage
-        setThreadId(newId);
         document.cookie = `sw_uid=${newId}; path=/; SameSite=Lax`;
         return newId;
       }
@@ -81,8 +79,6 @@ export default function ShrinkChat() {
       // First check URL params (from onboarding)
       if (urlThreadId) {
         sessionStorage.setItem("threadId", urlThreadId);
-        // Use context instead of direct localStorage
-        setThreadId(urlThreadId);
         document.cookie = `sw_uid=${urlThreadId}; path=/; SameSite=Lax`;
         return urlThreadId;
       }
@@ -96,13 +92,18 @@ export default function ShrinkChat() {
       const stored = sessionStorage.getItem("threadId");
       const id = stored || uuid();
       sessionStorage.setItem("threadId", id);
-      // Use context instead of direct localStorage
-      setThreadId(id);
       document.cookie = `sw_uid=${id}; path=/; SameSite=Lax`;
       return id;
     }
     return uuid();
   });
+
+  // Update context with threadId in useEffect to avoid setState during render
+  useEffect(() => {
+    if (threadId && threadId !== sessionThreadId) {
+      setThreadId(threadId);
+    }
+  }, [threadId, sessionThreadId, setThreadId]);
 
   // Store version in localStorage after component mounts
   useEffect(() => {
@@ -272,7 +273,7 @@ export default function ShrinkChat() {
         }
 
         // If onboarding is already complete, skip the intro
-        if (profile?.onboarding_complete) {
+        if (profile?.onboarding_completed) {
           setOnboardingStep("done");
         }
       } catch (error) {
