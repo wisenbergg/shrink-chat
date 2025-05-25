@@ -29,7 +29,7 @@ export default function WelcomePage() {
         // Record welcome visit (simplified - just ensure profile exists)
         try {
           // The SessionContext already ensures profile exists, so no additional tracking needed
-          console.log("Welcome page visited for thread:", newThreadId);
+          console.log("Welcome page visited for thread:", sessionThreadId || "new thread");
         } catch (error) {
           console.error("Error in onboarding welcome:", error);
         }
