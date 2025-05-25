@@ -26,24 +26,10 @@ export default function WelcomePage() {
           console.log("Initialized new threadId:", newThreadId);
         }
 
-        // Record welcome visit in onboarding_progress
+        // Record welcome visit (simplified - just ensure profile exists)
         try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (user) {
-            const { error } = await supabase.from("onboarding_progress").upsert(
-              {
-                user_id: user.id,
-                current_step: 1,
-                step1_completed_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id" }
-            );
-
-            if (error)
-              console.error("Error updating onboarding progress:", error);
-          }
+          // The SessionContext already ensures profile exists, so no additional tracking needed
+          console.log("Welcome page visited for thread:", newThreadId);
         } catch (error) {
           console.error("Error in onboarding welcome:", error);
         }

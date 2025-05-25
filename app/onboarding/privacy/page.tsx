@@ -16,24 +16,9 @@ export default function PrivacyPage() {
       if (!auth) {
         router.replace("/login");
       } else {
-        // Record privacy visit in onboarding_progress
+        // Record privacy visit (simplified - just ensure profile exists)
         try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (user) {
-            const { error } = await supabase.from("onboarding_progress").upsert(
-              {
-                user_id: user.id,
-                current_step: 2,
-                step2_completed_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id" }
-            );
-
-            if (error)
-              console.error("Error updating onboarding progress:", error);
-          }
+          console.log("Privacy page visited");
         } catch (error) {
           console.error("Error in onboarding privacy:", error);
         }

@@ -16,24 +16,9 @@ export default function ChooseModePage() {
       if (!auth) {
         router.replace("/login");
       } else {
-        // Record choose-mode visit in onboarding_progress
+        // Record choose-mode visit (simplified - just ensure profile exists)
         try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (user) {
-            const { error } = await supabase.from("onboarding_progress").upsert(
-              {
-                user_id: user.id,
-                current_step: 3,
-                step3_completed_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id" }
-            );
-
-            if (error)
-              console.error("Error updating onboarding progress:", error);
-          }
+          console.log("Choose-mode page visited");
         } catch (error) {
           console.error("Error in onboarding choose-mode:", error);
         }

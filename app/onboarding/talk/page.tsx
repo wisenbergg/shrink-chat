@@ -21,26 +21,9 @@ export default function TalkPage() {
           console.log("Created fallback authentication");
         }
 
-        // Record talk visit in onboarding_progress
+        // Record talk visit (simplified - just ensure profile exists)
         try {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-
-          // If user exists, update onboarding progress
-          if (user) {
-            const { error } = await supabase.from("onboarding_progress").upsert(
-              {
-                user_id: user.id,
-                current_step: 4,
-                step4_completed_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id" }
-            );
-
-            if (error)
-              console.error("Error updating onboarding progress:", error);
-          }
+          console.log("Talk page visited");
         } catch (error) {
           console.error("Error in onboarding talk:", error);
           // Continue even if there's an error
@@ -90,39 +73,17 @@ export default function TalkPage() {
 
       // Try to update Supabase directly as a fallback
       try {
-        // First check if the user exists
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        // Update the profiles table to mark onboarding as completed
+        // This is the correct approach since profiles.onboarding_completed exists
+        const { error } = await supabase
+          .from("profiles")
+          .update({ onboarding_completed: true })
+          .eq("thread_id", threadId);
 
-        if (user) {
-          // If authenticated user exists, use their ID
-          const { error } = await supabase.from("onboarding_progress").upsert(
-            {
-              user_id: user.id,
-              completed: true,
-              completed_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id" }
-          );
-
-          if (error) {
-            console.warn("Fallback update failed:", error);
-          }
+        if (error) {
+          console.warn("Fallback profile update failed:", error);
         } else {
-          // If no authenticated user, use threadId as user_id
-          const { error } = await supabase.from("onboarding_progress").upsert(
-            {
-              user_id: threadId,
-              completed: true,
-              completed_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id" }
-          );
-
-          if (error) {
-            console.warn("Fallback update with threadId failed:", error);
-          }
+          console.log("Successfully marked onboarding complete in profiles table");
         }
       } catch (err) {
         console.warn("Fallback update error:", err);
