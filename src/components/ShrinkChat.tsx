@@ -510,10 +510,11 @@ export default function ShrinkChat() {
     const storedIsReturningUser =
       getFromShortTermMemory(threadId, "isReturningUser") === "true";
 
-    // Combined condition for determining returning user status
+    // FIXED: A user is only "returning" if they've ACTUALLY seen the intro before
+    // OR if they have message history (indicating previous sessions)
+    // Simply completing onboarding doesn't make them a returning user
     const isReturningUser =
       hasIntroBeenShown ||
-      isOnboardingComplete ||
       storedIsReturningUser ||
       messages.length > 0;
 
@@ -524,9 +525,10 @@ export default function ShrinkChat() {
       `User identified as: ${isReturningUser ? "returning" : "new"} user`
     );
 
-    // For new users or those who haven't seen intro yet
+    // For new users who completed onboarding but haven't seen intro yet
     if (
       onboardingStep === "intro1" &&
+      isOnboardingComplete &&
       !isReturningUser &&
       !introStartedRef.current
     ) {
@@ -543,7 +545,7 @@ export default function ShrinkChat() {
       ];
       showIntroSequence(introMessages);
     }
-    // For returning users who have finished onboarding
+    // For returning users who have finished onboarding AND have seen intro before
     else if (
       (onboardingStep === "done" || isOnboardingComplete) &&
       isReturningUser &&
