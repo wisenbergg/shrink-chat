@@ -25,10 +25,6 @@ export function useUserProfile(threadId: string | null) {
       return;
     }
 
-    // Check if we're coming from onboarding completion (URL has threadId param)
-    const urlParams = new URLSearchParams(window.location.search);
-    const isFromOnboarding = urlParams.has('threadId');
-
     // Check localStorage first for onboarding status
     const localOnboardingComplete =
       localStorage.getItem("onboarding_complete") === "true";
@@ -41,8 +37,8 @@ export function useUserProfile(threadId: string | null) {
       });
     }
 
-    // Fetch from API if we haven't fetched yet OR if coming from onboarding completion
-    if (!fetchedOnce || isFromOnboarding) {
+    // Only fetch from API if we haven't already fetched
+    if (!fetchedOnce) {
       setLoading(true);
       fetch(`/api/profile/${threadId}`)
         .then((res) => {
