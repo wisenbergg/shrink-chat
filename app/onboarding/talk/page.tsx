@@ -3,6 +3,25 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@/lib/supabaseClient/browser";
 import { useSession } from "@/context/SessionContext";
+import "../onboarding-styles.css";
+
+// Progress indicator component
+function ProgressIndicator({ currentStep }: { currentStep: number }) {
+  const steps = 5; // welcome, overview, privacy, choose-mode, talk
+
+  return (
+    <div className="onboarding-progress">
+      {Array.from({ length: steps }, (_, i) => (
+        <div
+          key={i}
+          className={`progress-dot ${
+            i < currentStep ? "completed" : i === currentStep ? "active" : ""
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function TalkPage() {
   const router = useRouter();
@@ -110,20 +129,59 @@ export default function TalkPage() {
   };
 
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="w-full max-w-2xl">
-        <div className="space-y-4">
-          <p className="text-2xl font-medium text-foreground text-center animate-fade-in">
-            I&apos;m here to listen, no matter what&apos;s on your mind.
-          </p>
-          <div className="pt-6 flex justify-center">
-            <button
-              onClick={handleComplete}
-              disabled={isLoading}
-              className="inline-flex items-center justify-center w-32 h-10 px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary-hover transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 btn-hover-effect"
-            >
-              {isLoading ? "..." : "Thanks"}
-            </button>
+    <div className="onboarding-container">
+      <ProgressIndicator currentStep={4} />
+
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="onboarding-card p-12 w-full max-w-2xl">
+          <div className="space-y-8">
+            <div className="text-center space-y-6">
+              {/* Heart icon with gentle pulse */}
+              <div className="heart-icon mx-auto mb-6 text-blue-500">
+                <svg
+                  className="w-16 h-16 mx-auto gentle-pulse"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </div>
+
+              <h2 className="text-3xl font-medium text-foreground gentle-fade-in">
+                It&apos;s a space to be real…
+              </h2>
+
+              <p className="text-xl text-foreground/80 gentle-fade-in max-w-lg mx-auto leading-relaxed">
+                Whatever you&apos;re feeling, thinking, or going through - this
+                is your place to share it all, without judgment.
+              </p>
+
+              <p className="text-base text-muted-foreground gentle-fade-in max-w-md mx-auto leading-relaxed">
+                Take your time. There&apos;s no pressure, no expectations. Just
+                you, being heard.
+              </p>
+            </div>
+
+            <div className="pt-6 flex justify-center">
+              <button
+                onClick={handleComplete}
+                disabled={isLoading}
+                className="onboarding-button completion-button inline-flex items-center justify-center px-10 py-4 text-lg font-medium rounded-full bg-primary text-primary-foreground hover:bg-primary-hover transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-w-[160px] disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="loading-dots">
+                      <div></div>
+                      <div></div>
+                      <div></div>
+                    </div>
+                    <span>Starting...</span>
+                  </div>
+                ) : (
+                  "Let's begin"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

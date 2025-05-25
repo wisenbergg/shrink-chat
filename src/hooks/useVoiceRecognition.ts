@@ -136,6 +136,17 @@ export function useVoiceRecognition(
     };
   }, [continuous, interimResults, language, onResult, onError, onStart, onEnd]);
 
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+    }
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, [isListening]);
+
   const startListening = useCallback(() => {
     if (!recognitionRef.current || !isSupported) {
       setError("Speech recognition not available");
@@ -162,18 +173,7 @@ export function useVoiceRecognition(
       setError(errorMessage);
       onError?.(errorMessage);
     }
-  }, [isSupported, isListening, onError]);
-
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-    }
-
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, [isListening]);
+  }, [isSupported, isListening, onError, stopListening]);
 
   const resetTranscript = useCallback(() => {
     setTranscript("");

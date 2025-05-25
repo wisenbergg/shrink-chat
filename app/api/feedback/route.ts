@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,20 +7,33 @@ const supabase = createClient(
 );
 
 export async function POST(req: Request) {
-  const { sessionId, responseId, rating, comment } = await req.json();
+  const { responseId, rating, comment } = await req.json();
 
-  if (!sessionId || !responseId || !rating) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  if (!responseId || !rating) {
+    return NextResponse.json(
+      { error: "Missing required fields" },
+      { status: 400 }
+    );
   }
 
-  const { error } = await supabase.from('feedback').insert([
-    { session_id: sessionId, response_id: responseId, rating, comment }
-  ]);
+  console.log("🔍 Feedback submission attempt:", {
+    responseId,
+    rating,
+    comment,
+  });
+
+  const { error } = await supabase
+    .from("feedback")
+    .insert([{ message_id: responseId, rating, comment }]);
 
   if (error) {
-    console.error('❌ Supabase insert error:', error);
-    return NextResponse.json({ error: 'Failed to store feedback' }, { status: 500 });
+    console.error("❌ Supabase insert error:", error);
+    return NextResponse.json(
+      { error: "Failed to store feedback" },
+      { status: 500 }
+    );
   }
 
+  console.log("✅ Feedback successfully inserted");
   return NextResponse.json({ success: true });
 }

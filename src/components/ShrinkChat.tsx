@@ -18,14 +18,17 @@ import {
   storeConversationMessage,
   extractAndStoreUserName,
   storeInShortTermMemory,
+  getFromShortTermMemory,
 } from "@/lib/shortTermMemory";
+import { logChatClient } from "@/lib/chatLogger";
 
 // Set this to a new value whenever you want to reset all users
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.1.0";
 
 interface Message {
   sender: "user" | "engine";
   text: string;
+  id?: string; // Add optional ID for database reference
 }
 interface MemoryEntry {
   role: "assistant" | "user" | string;
@@ -58,10 +61,13 @@ export default function ShrinkChat() {
     if (typeof window !== "undefined") {
       // Check if we need to reset due to version change
       const storedVersion = localStorage.getItem("app_version");
-      const needsReset = storedVersion !== APP_VERSION;
+      // Only reset if there's an existing version that's different (not for new users)
+      const needsReset = storedVersion && storedVersion !== APP_VERSION;
 
       if (needsReset) {
-        console.log("App version changed, resetting user data");
+        console.log(
+          `App version changed from ${storedVersion} to ${APP_VERSION}, resetting user data`
+        );
         // Clear all storage
         localStorage.clear();
         sessionStorage.clear();
@@ -73,6 +79,11 @@ export default function ShrinkChat() {
         sessionStorage.setItem("threadId", newId);
         document.cookie = `sw_uid=${newId}; path=/; SameSite=Lax`;
         return newId;
+      }
+
+      // If no stored version, this is likely a new user - store version without reset
+      if (!storedVersion) {
+        localStorage.setItem("app_version", APP_VERSION);
       }
 
       // If no reset needed, use normal flow
@@ -90,7 +101,20 @@ export default function ShrinkChat() {
 
       // Then check sessionStorage
       const stored = sessionStorage.getItem("threadId");
-      const id = stored || uuid();
+      if (stored) {
+        return stored;
+      }
+
+      // Then check cookies
+      const match = document.cookie.match(/sw_uid=([^;]+)/);
+      if (match) {
+        const id = match[1];
+        sessionStorage.setItem("threadId", id);
+        return id;
+      }
+
+      // If nothing found, generate new
+      const id = uuid();
       sessionStorage.setItem("threadId", id);
       document.cookie = `sw_uid=${id}; path=/; SameSite=Lax`;
       return id;
@@ -104,13 +128,6 @@ export default function ShrinkChat() {
       setThreadId(threadId);
     }
   }, [threadId, sessionThreadId, setThreadId]);
-
-  // Store version in localStorage after component mounts
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("app_version", APP_VERSION);
-    }
-  }, []);
 
   // Initialize memory hook - using only threadId now
   const {
@@ -145,8 +162,22 @@ export default function ShrinkChat() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const silenceTimerRef = useRef<number | null>(null);
   const userScrolledUpRef = useRef(false);
+  const introStartedRef = useRef(false); // Add this ref
+  const turnCountRef = useRef(0); // Track turn count for messages
 
   /* ──────────────  helpers  ───────────── */
+  const logMessageWithTurn = useCallback(async (
+    role: "user" | "assistant",
+    content: string
+  ): Promise<string> => {
+    turnCountRef.current += 1;
+    return await logChatClient({
+      threadId,
+      turn: turnCountRef.current,
+      role,
+      content,
+    });
+  }, [threadId]);
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current !== null) {
       clearTimeout(silenceTimerRef.current);
@@ -156,18 +187,21 @@ export default function ShrinkChat() {
 
   const scheduleSilenceHandler = useCallback(() => {
     clearSilenceTimer();
-    silenceTimerRef.current = window.setTimeout(() => {
+    silenceTimerRef.current = window.setTimeout(async () => {
+      const reminderText = "I'm here whenever you're ready to continue.";
+      const messageId = await logMessageWithTurn("assistant", reminderText);
       setMessages((prev) => [
         ...prev,
         {
           sender: "engine",
-          text: "I'm here whenever you're ready to continue.",
+          text: reminderText,
+          id: messageId,
         },
       ]);
       setReminderSent(true);
       silenceTimerRef.current = null;
     }, 120_000);
-  }, [clearSilenceTimer]);
+  }, [clearSilenceTimer, logMessageWithTurn]);
 
   const scrollToBottom = () => {
     if (scrollRef.current && !userScrolledUpRef.current) {
@@ -186,60 +220,466 @@ export default function ShrinkChat() {
   };
 
   /* ──────────────  intro script  ───────────── */
-  useEffect(() => {
-    if (onboardingStep === "intro1")
-      showMessageWithDelay("Hey, I'm really glad you're here.", "intro2");
-    if (onboardingStep === "intro2")
-      showMessageWithDelay(
-        "This space is just for you — to say what you're feeling, without pressure or judgment. I'm here to listen, no matter what's on your mind.",
-        "intro3"
-      );
-    if (onboardingStep === "intro3")
-      showMessageWithDelay(
-        "Everything you say stays 100% confidential. I don't share anything. Ever.",
-        "invite"
-      );
-    if (onboardingStep === "invite")
-      showMessageWithDelay(
-        "It's a space to be real — even if that means confused, angry, numb, or all of the above. I'll never judge or rush you.",
-        "done"
-      );
-  }, [onboardingStep]);
+  const showIntroSequence = useCallback(
+    (introMsgs: string[]) => {
+      const addMessagesSequentially = async (index: number) => {
+        if (index >= introMsgs.length) {
+          setOnboardingStep("done");
+          return;
+        }
 
-  const showMessageWithDelay = (text: string, nextStep: OnboardingStep) => {
-    setIsTyping(true);
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { sender: "engine", text }]);
-      setOnboardingStep(nextStep);
-      setIsTyping(false);
-    }, 2500);
-  };
+        // Show typing indicator before each message
+        setIsTyping(true);
+
+        setTimeout(async () => {
+          // Store message in database and get ID
+          const messageId = await logMessageWithTurn(
+            "assistant",
+            introMsgs[index]
+          );
+
+          // Add the message and hide typing indicator
+          setMessages((prev) => [
+            ...prev,
+            { sender: "engine", text: introMsgs[index], id: messageId },
+          ]);
+          setIsTyping(false);
+
+          if (index === introMsgs.length - 1) {
+            // Last message - we're done
+            setOnboardingStep("done");
+          } else {
+            // Wait a bit before starting the next message
+            setTimeout(() => {
+              addMessagesSequentially(index + 1);
+            }, 1500); // 1.5 second pause between messages
+          }
+        }, 2000); // 2 seconds of typing indicator per message
+      };
+
+      addMessagesSequentially(0);
+    },
+    [setOnboardingStep, setIsTyping, setMessages, logMessageWithTurn]
+  ); // Remove threadId dependency
+
+  // Helper function to generate a personalized welcome back message
+  const generateWelcomeBackMessage = useCallback(
+    (messages: Message[]) => {
+      // Get all context data from short-term memory
+      const topicsString =
+        getFromShortTermMemory(threadId, "conversationTopics") || "";
+      const topics = topicsString ? topicsString.split(",") : [];
+      const emotionsString =
+        getFromShortTermMemory(threadId, "userEmotions") || "";
+      const emotions = emotionsString ? emotionsString.split(",") : [];
+      const userName = getFromShortTermMemory(threadId, "userName");
+      const conversationLength = Number(
+        getFromShortTermMemory(threadId, "conversationLength") || "0"
+      );
+      const lastDate = getFromShortTermMemory(threadId, "lastInteractionDate");
+
+      // Determine how long it's been since the last interaction if available
+      let timeSinceLastVisit = "";
+      if (lastDate) {
+        try {
+          const lastVisit = new Date(lastDate);
+          const now = new Date();
+          const daysSince = Math.floor(
+            (now.getTime() - lastVisit.getTime()) / (1000 * 60 * 60 * 24)
+          );
+
+          if (daysSince === 0) {
+            timeSinceLastVisit = "today";
+          } else if (daysSince === 1) {
+            timeSinceLastVisit = "yesterday";
+          } else if (daysSince < 7) {
+            timeSinceLastVisit = `${daysSince} days ago`;
+          } else if (daysSince < 30) {
+            const weeks = Math.floor(daysSince / 7);
+            timeSinceLastVisit = `${weeks} ${
+              weeks === 1 ? "week" : "weeks"
+            } ago`;
+          } else {
+            const months = Math.floor(daysSince / 30);
+            timeSinceLastVisit = `${months} ${
+              months === 1 ? "month" : "months"
+            } ago`;
+          }
+        } catch (e) {
+          console.error("Error calculating time since last visit:", e);
+        }
+      }
+
+      const userMessages = messages.filter((msg) => msg.sender === "user");
+
+      // For brand new returning users with no messages but completed onboarding
+      if (userMessages.length === 0) {
+        if (userName) {
+          if (timeSinceLastVisit) {
+            return `Welcome back, ${userName}! It's been ${timeSinceLastVisit} since we last talked. How have you been?`;
+          }
+          return `Welcome back, ${userName}! It's great to see you again. What's been on your mind?`;
+        }
+        return "Welcome back! It's great to see you again. What's been on your mind?";
+      }
+
+      // Generate responses based on patterns, topics, and emotions
+      // First check for topics in the conversation
+      if (
+        topics.some((topic) =>
+          ["work", "job", "career", "boss", "coworker", "colleague"].includes(
+            topic
+          )
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}! How's work been treating you since we last talked${
+              timeSinceLastVisit ? ` ${timeSinceLastVisit}` : ""
+            }?`
+          : `Welcome back! How's work been treating you since we last talked${
+              timeSinceLastVisit ? ` ${timeSinceLastVisit}` : ""
+            }?`;
+      } else if (
+        topics.some((topic) =>
+          ["anxiety", "worry", "nervous", "fear", "panic", "stress"].includes(
+            topic
+          )
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}! I hope your anxiety levels have been lower since our last conversation${
+              timeSinceLastVisit ? ` ${timeSinceLastVisit}` : ""
+            }.`
+          : `Welcome back! I hope your anxiety levels have been lower since our last conversation${
+              timeSinceLastVisit ? ` ${timeSinceLastVisit}` : ""
+            }.`;
+      } else if (
+        topics.some((topic) =>
+          [
+            "relationship",
+            "partner",
+            "dating",
+            "girlfriend",
+            "boyfriend",
+            "spouse",
+          ].includes(topic)
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}! How have things been with your relationship since we last spoke${
+              timeSinceLastVisit ? ` ${timeSinceLastVisit}` : ""
+            }?`
+          : `Welcome back! How have things been with your relationship since we last spoke${
+              timeSinceLastVisit ? ` ${timeSinceLastVisit}` : ""
+            }?`;
+      } else if (
+        topics.some((topic) =>
+          [
+            "family",
+            "mom",
+            "dad",
+            "parent",
+            "sibling",
+            "brother",
+            "sister",
+          ].includes(topic)
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}! How have things been with your family${
+              timeSinceLastVisit
+                ? ` since we chatted ${timeSinceLastVisit}`
+                : ""
+            }?`
+          : `Welcome back! How have things been with your family${
+              timeSinceLastVisit
+                ? ` since we chatted ${timeSinceLastVisit}`
+                : ""
+            }?`;
+      } else if (
+        topics.some((topic) =>
+          ["sleep", "tired", "exhausted", "insomnia", "rest"].includes(topic)
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}! Have you been sleeping any better since our last conversation?`
+          : "Welcome back! Have you been sleeping any better since our last conversation?";
+      } else if (
+        topics.some((topic) =>
+          ["health", "sick", "illness", "doctor", "symptom", "pain"].includes(
+            topic
+          )
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}! How has your health been${
+              timeSinceLastVisit ? ` since we talked ${timeSinceLastVisit}` : ""
+            }?`
+          : `Welcome back! How has your health been${
+              timeSinceLastVisit ? ` since we talked ${timeSinceLastVisit}` : ""
+            }?`;
+      }
+
+      // Next check for emotions in conversation
+      else if (
+        emotions.some((emotion) =>
+          ["happy", "joy", "excited", "delighted", "pleased"].includes(emotion)
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}! Has that positive energy been sticking with you${
+              timeSinceLastVisit
+                ? ` since we chatted ${timeSinceLastVisit}`
+                : ""
+            }?`
+          : `Welcome back! Has that positive energy been sticking with you${
+              timeSinceLastVisit
+                ? ` since we chatted ${timeSinceLastVisit}`
+                : ""
+            }?`;
+      } else if (
+        emotions.some((emotion) =>
+          ["sad", "unhappy", "depressed", "grief", "sorrow"].includes(emotion)
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}. I hope things have gotten a bit easier for you since our last conversation.`
+          : "Welcome back. I hope things have gotten a bit easier for you since our last conversation.";
+      } else if (
+        emotions.some((emotion) =>
+          ["angry", "mad", "frustrated", "irritated", "annoyed"].includes(
+            emotion
+          )
+        )
+      ) {
+        return userName
+          ? `Welcome back, ${userName}. I hope you're feeling less frustrated than when we last spoke.`
+          : "Welcome back. I hope you're feeling less frustrated than when we last spoke.";
+      }
+
+      // If no specific topics or emotions, base on conversation length
+      else if (conversationLength > 20) {
+        return userName
+          ? `Welcome back, ${userName}! It's great to continue our conversations. What's been on your mind${
+              timeSinceLastVisit ? ` since we talked ${timeSinceLastVisit}` : ""
+            }?`
+          : `Welcome back! It's great to continue our conversations. What's been on your mind${
+              timeSinceLastVisit ? ` since we talked ${timeSinceLastVisit}` : ""
+            }?`;
+      } else if (conversationLength > 10) {
+        return userName
+          ? `Welcome back, ${userName}! Looking forward to continuing our conversation. How have you been${
+              timeSinceLastVisit
+                ? ` since we chatted ${timeSinceLastVisit}`
+                : ""
+            }?`
+          : `Welcome back! Looking forward to continuing our conversation. How have you been${
+              timeSinceLastVisit
+                ? ` since we chatted ${timeSinceLastVisit}`
+                : ""
+            }?`;
+      } else if (conversationLength > 5) {
+        return userName
+          ? `Welcome back, ${userName}! How has life been treating you${
+              timeSinceLastVisit
+                ? ` since our conversation ${timeSinceLastVisit}`
+                : ""
+            }?`
+          : `Welcome back! How has life been treating you${
+              timeSinceLastVisit
+                ? ` since our conversation ${timeSinceLastVisit}`
+                : ""
+            }?`;
+      } else {
+        // Default for returning users with limited history
+        return userName
+          ? `Welcome back, ${userName}! I'm here to continue our conversation whenever you're ready.`
+          : "Welcome back! I'm here to continue our conversation whenever you're ready.";
+      }
+    },
+    [threadId]
+  );
+
+  useEffect(() => {
+    // Check localStorage to see if we've already shown the intro for this thread
+    const introShownKey = `intro_shown_${threadId}`;
+    const onboardingCompleteKey = `onboarding_complete`;
+    const hasIntroBeenShown = localStorage.getItem(introShownKey) === "true";
+    const isOnboardingComplete =
+      localStorage.getItem(onboardingCompleteKey) === "true";
+    const storedIsReturningUser =
+      getFromShortTermMemory(threadId, "isReturningUser") === "true";
+
+    // Combined condition for determining returning user status
+    const isReturningUser =
+      hasIntroBeenShown ||
+      isOnboardingComplete ||
+      storedIsReturningUser ||
+      messages.length > 0;
+
+    console.log(
+      `User status check - hasIntroBeenShown: ${hasIntroBeenShown}, isOnboardingComplete: ${isOnboardingComplete}, storedIsReturningUser: ${storedIsReturningUser}, messagesLength: ${messages.length}`
+    );
+    console.log(
+      `User identified as: ${isReturningUser ? "returning" : "new"} user`
+    );
+
+    // For new users or those who haven't seen intro yet
+    if (
+      onboardingStep === "intro1" &&
+      !isReturningUser &&
+      !introStartedRef.current
+    ) {
+      // Set both the ref and localStorage flag
+      introStartedRef.current = true;
+      localStorage.setItem(introShownKey, "true");
+
+      const introMessages = [
+        "Before we get started I just want you to know…",
+        "Your thoughts, feelings, experiences, words, and emotions are all valid and deserving of respect.",
+        "I am not here to fix, I am here to listen.",
+        "Sometimes, that's really all you need.",
+        "With that said, I'm ready when you are. Anything specific on your mind?",
+      ];
+      showIntroSequence(introMessages);
+    }
+    // For returning users who have finished onboarding
+    else if (
+      (onboardingStep === "done" || isOnboardingComplete) &&
+      isReturningUser &&
+      !introStartedRef.current
+    ) {
+      // Ensure onboarding step is set to done for returning users
+      if (onboardingStep !== "done") {
+        setOnboardingStep("done");
+      }
+
+      // Log that this is a returning user session
+      console.log("Returning user detected, showing welcome back message");
+
+      // Show welcome back message for returning users
+      introStartedRef.current = true;
+      const welcomeBackMessage = generateWelcomeBackMessage(messages);
+
+      // Add welcome back message after a short delay
+      setTimeout(async () => {
+        const messageId = await logMessageWithTurn(
+          "assistant",
+          welcomeBackMessage
+        );
+        setMessages((prev) => [
+          ...prev,
+          { sender: "engine", text: welcomeBackMessage, id: messageId },
+        ]);
+
+        // Also store the assistant's response in short-term memory
+        storeConversationMessage(threadId, "assistant", welcomeBackMessage);
+
+        // Update the last interaction date
+        storeInShortTermMemory(
+          threadId,
+          "lastInteractionDate",
+          new Date().toISOString()
+        );
+      }, 1000);
+    }
+  }, [
+    onboardingStep,
+    showIntroSequence,
+    threadId,
+    messages,
+    generateWelcomeBackMessage,
+    logMessageWithTurn,
+  ]); // Added threadId as dependency
+
+  // Add an immediate check for returning users on component mount
+  useEffect(() => {
+    // Skip if no threadId or if we've already determined onboarding state
+    if (!threadId || onboardingStep !== "intro1") return;
+
+    const checkForReturningUser = async () => {
+      console.log("Checking for returning user status on mount...");
+
+      // Check local storage first for quick determination
+      const introShownKey = `intro_shown_${threadId}`;
+      const onboardingCompleteKey = `onboarding_complete`;
+      const hasIntroBeenShown = localStorage.getItem(introShownKey) === "true";
+      const isOnboardingComplete =
+        localStorage.getItem(onboardingCompleteKey) === "true";
+
+      // If we have local indications of a returning user, skip intro immediately
+      if (hasIntroBeenShown || isOnboardingComplete) {
+        console.log("Returning user detected from local storage");
+        setOnboardingStep("done");
+        return;
+      }
+
+      try {
+        // Check if profile exists and has completed onboarding
+        const res = await fetch(`/api/profile/${threadId}`);
+        if (res.ok) {
+          const { profile } = await res.json();
+          if (profile && profile.onboarding_completed) {
+            console.log("Returning user detected from profile API");
+            setOnboardingStep("done");
+            localStorage.setItem(onboardingCompleteKey, "true");
+            storeInShortTermMemory(threadId, "isReturningUser", "true");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking returning user status:", error);
+      }
+    };
+
+    checkForReturningUser();
+  }, [threadId, onboardingStep]);
 
   /* ──────────────  autoscroll  ───────────── */
   useEffect(scrollToBottom, [messages]);
   useEffect(() => clearSilenceTimer, [clearSilenceTimer]);
 
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount if needed
+    };
+  }, []);
+
   /* ──────────────  load history + profile  ───────────── */
   useEffect(() => {
     async function loadThreadHistory() {
       try {
-        // Use the new endpoint
+        // Use the memory endpoint to get chat history
         const res = await fetch(`/api/memory/${threadId}`);
         if (!res.ok) {
           console.error("Failed to load thread history:", res.statusText);
           return;
         }
+
         const data = await res.json();
-        const parsed = (data.memory || []).map((m: MemoryEntry) => ({
-          sender: m.role === "assistant" ? "engine" : "user",
-          text: m.content,
-        }));
+        // Map the memory entries to message format
+        const parsed = (data.memory || []).map(
+          (m: MemoryEntry, index: number) => ({
+            sender: m.role === "assistant" ? "engine" : "user",
+            text: m.content,
+            id: `historical-${index}`, // Temporary ID for historical messages
+          })
+        );
         setMessages(parsed);
 
         // Also store recent messages in short-term memory
-        // Only process the last 5 messages to avoid overloading short-term memory
-        const recentMessages = data.memory?.slice(-5) || [];
+        // Process the last 15 messages for better context, increased from 10
+        const recentMessages = data.memory?.slice(-15) || [];
+
+        // Track topics to improve personalized welcome messages with more categories
+        const topics = new Set();
+        // Track emotional states for better personalization
+        const emotions = new Set();
+        // Store last interaction date
+        const lastDate = new Date().toISOString();
+        storeInShortTermMemory(threadId, "lastInteractionDate", lastDate);
+
         for (const msg of recentMessages) {
+          // Store in short-term conversation memory
           storeConversationMessage(
             threadId,
             msg.role as "user" | "assistant",
@@ -249,7 +689,160 @@ export default function ShrinkChat() {
           // Extract names from user messages
           if (msg.role === "user") {
             extractAndStoreUserName(threadId, msg.content);
+
+            // Extract potential topics from user messages for better personalization
+            const userText = msg.content.toLowerCase();
+
+            // Enhanced topic detection - more comprehensive list
+            [
+              "work",
+              "job",
+              "career",
+              "boss",
+              "coworker",
+              "colleague",
+              "family",
+              "mom",
+              "dad",
+              "parent",
+              "sibling",
+              "brother",
+              "sister",
+              "child",
+              "kid",
+              "anxiety",
+              "worry",
+              "nervous",
+              "fear",
+              "panic",
+              "relationship",
+              "partner",
+              "dating",
+              "girlfriend",
+              "boyfriend",
+              "spouse",
+              "marriage",
+              "health",
+              "sick",
+              "illness",
+              "doctor",
+              "symptom",
+              "pain",
+              "sleep",
+              "tired",
+              "exhausted",
+              "insomnia",
+              "rest",
+              "stress",
+              "overwhelm",
+              "burden",
+              "pressure",
+              "depression",
+              "sad",
+              "down",
+              "hopeless",
+              "blue",
+              "therapy",
+              "counseling",
+              "psychiatrist",
+              "psychologist",
+              "treatment",
+              "goals",
+              "achievement",
+              "ambition",
+              "future",
+              "plan",
+              "hobby",
+              "interest",
+              "passion",
+              "free time",
+              "fun",
+              "exercise",
+              "workout",
+              "fitness",
+              "gym",
+              "running",
+            ].forEach((topic) => {
+              if (userText.includes(topic)) {
+                topics.add(topic);
+              }
+            });
+
+            // Extract emotions for better contextual understanding
+            [
+              "happy",
+              "joy",
+              "excited",
+              "delighted",
+              "pleased",
+              "sad",
+              "unhappy",
+              "depressed",
+              "grief",
+              "sorrow",
+              "angry",
+              "mad",
+              "frustrated",
+              "irritated",
+              "annoyed",
+              "afraid",
+              "scared",
+              "fearful",
+              "terrified",
+              "anxious",
+              "surprised",
+              "shocked",
+              "astonished",
+              "amazed",
+              "confused",
+              "puzzled",
+              "perplexed",
+              "unsure",
+              "hopeful",
+              "optimistic",
+              "looking forward",
+            ].forEach((emotion) => {
+              if (userText.includes(emotion)) {
+                emotions.add(emotion);
+              }
+            });
           }
+        }
+
+        // Store discovered topics in short-term memory
+        if (topics.size > 0) {
+          storeInShortTermMemory(
+            threadId,
+            "conversationTopics",
+            Array.from(topics).join(",")
+          );
+        }
+
+        // Store detected emotions in short-term memory
+        if (emotions.size > 0) {
+          storeInShortTermMemory(
+            threadId,
+            "userEmotions",
+            Array.from(emotions).join(",")
+          );
+        }
+
+        // Store conversation length for personalization
+        storeInShortTermMemory(
+          threadId,
+          "conversationLength",
+          String(parsed.length)
+        );
+
+        console.log(
+          `Loaded ${
+            parsed.length
+          } messages from thread history, identified topics: ${Array.from(
+            topics
+          ).join(", ")}`
+        );
+        if (emotions.size > 0) {
+          console.log(`Detected emotions: ${Array.from(emotions).join(", ")}`);
         }
       } catch (error) {
         console.error("Error loading thread history:", error);
@@ -261,20 +854,72 @@ export default function ShrinkChat() {
   useEffect(() => {
     async function loadUserProfile() {
       try {
+        console.log(`Loading user profile for threadId: ${threadId}`);
         const res = await fetch(`/api/profile/${threadId}`);
         if (!res.ok) {
           console.error("Failed to load user profile:", res.statusText);
           return;
         }
-        const { profile } = await res.json();
-        if (profile?.name) {
-          // Store the name in short-term memory
-          storeInShortTermMemory(threadId, "userName", profile.name);
-        }
 
-        // If onboarding is already complete, skip the intro
-        if (profile?.onboarding_completed) {
-          setOnboardingStep("done");
+        const { profile } = await res.json();
+
+        if (profile) {
+          console.log(
+            `Profile loaded successfully. Onboarding status: ${
+              profile.onboarding_completed ? "completed" : "not completed"
+            }`
+          );
+
+          // Enhanced profile data handling
+          const isReturningUser = !!profile.onboarding_completed;
+          console.log(
+            `User identified as: ${isReturningUser ? "returning" : "new"} user`
+          );
+
+          // Store name in short-term memory if available
+          if (
+            profile.name &&
+            profile.name !== "Anonymous" &&
+            profile.name !== "New User"
+          ) {
+            storeInShortTermMemory(threadId, "userName", profile.name);
+            console.log(
+              `Stored user name in short-term memory: ${profile.name}`
+            );
+          }
+
+          // Store emotional tone and concerns in short-term memory if available
+          if (profile.emotional_tone && profile.emotional_tone.length > 0) {
+            storeInShortTermMemory(
+              threadId,
+              "emotionalTone",
+              profile.emotional_tone.join(",")
+            );
+          }
+
+          if (profile.concerns && profile.concerns.length > 0) {
+            storeInShortTermMemory(
+              threadId,
+              "concerns",
+              profile.concerns.join(",")
+            );
+          }
+
+          // Store returning user status in short-term memory
+          storeInShortTermMemory(
+            threadId,
+            "isReturningUser",
+            String(isReturningUser)
+          );
+
+          // If onboarding is already complete, skip the intro
+          if (profile.onboarding_completed) {
+            setOnboardingStep("done");
+            // Store completion status in localStorage for redundancy
+            localStorage.setItem("onboarding_complete", "true");
+          }
+        } else {
+          console.log("No profile found, user may be new");
         }
       } catch (error) {
         console.error("Error loading user profile:", error);
@@ -289,7 +934,14 @@ export default function ShrinkChat() {
     if (!prompt) return;
     clearSilenceTimer();
     setReminderSent(false);
-    setMessages((prev) => [...prev, { sender: "user", text: prompt }]);
+
+    // Store user message in database and get ID
+    const userMessageId = await logMessageWithTurn("user", prompt);
+
+    setMessages((prev) => [
+      ...prev,
+      { sender: "user", text: prompt, id: userMessageId },
+    ]);
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setIsLoading(true);
@@ -300,11 +952,16 @@ export default function ShrinkChat() {
         setTimeout(async () => {
           if (prompt.toLowerCase() === "skip") {
             setOnboardingStep("done");
+            const messageId = await logMessageWithTurn(
+              "assistant",
+              "Thank you. We can start wherever you like."
+            );
             setMessages((prev) => [
               ...prev,
               {
                 sender: "engine",
                 text: "Thank you. We can start wherever you like.",
+                id: messageId,
               },
             ]);
           } else {
@@ -318,11 +975,16 @@ export default function ShrinkChat() {
               }),
             });
             setOnboardingStep("done");
+            const messageId = await logMessageWithTurn(
+              "assistant",
+              "Thank you. We can start wherever you like."
+            );
             setMessages((prev) => [
               ...prev,
               {
                 sender: "engine",
                 text: "Thank you. We can start wherever you like.",
+                id: messageId,
               },
             ]);
           }
@@ -338,11 +1000,12 @@ export default function ShrinkChat() {
         if (isNameQuery && name) {
           // If the user is asking about their name and we have it in short-term memory,
           // respond immediately without calling the API
-          setTimeout(() => {
+          setTimeout(async () => {
             const response = `Your name is ${name}.`;
+            const messageId = await logMessageWithTurn("assistant", response);
             setMessages((prev) => [
               ...prev,
-              { sender: "engine", text: response },
+              { sender: "engine", text: response, id: messageId },
             ]);
 
             // Also store the assistant's response in short-term memory
@@ -372,6 +1035,30 @@ export default function ShrinkChat() {
 
         // Call the API with memory context
         console.log("Sending request to /api/shrink with memory context");
+
+        // Gather additional context from short-term memory
+        const userName = getFromShortTermMemory(threadId, "userName") || null;
+        const userEmotions =
+          getFromShortTermMemory(threadId, "userEmotions") || null;
+        const conversationTopics =
+          getFromShortTermMemory(threadId, "conversationTopics") || null;
+        const userPreferences =
+          getFromShortTermMemory(threadId, "userPreferences") || null;
+        const conversationLength =
+          getFromShortTermMemory(threadId, "conversationLength") || "0";
+
+        // Enhanced context object
+        const enhancedContext = {
+          userName,
+          userEmotions,
+          conversationTopics,
+          userPreferences,
+          conversationLength: parseInt(conversationLength, 10),
+          isReturningUser: true,
+        };
+
+        console.log("Enhanced context:", enhancedContext);
+
         const res = await fetch("/api/shrink", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -379,6 +1066,7 @@ export default function ShrinkChat() {
             prompt,
             threadId,
             memoryContext,
+            enhancedContext, // Add the enhanced context
           }),
         });
 
@@ -387,9 +1075,20 @@ export default function ShrinkChat() {
         }
 
         const data = await res.json();
+
+        // Store assistant response in database and get ID
+        const assistantMessageId = await logMessageWithTurn(
+          "assistant",
+          data.response_text
+        );
+
         setMessages((prev) => [
           ...prev,
-          { sender: "engine", text: data.response_text },
+          {
+            sender: "engine",
+            text: data.response_text,
+            id: assistantMessageId,
+          },
         ]);
 
         // Store the assistant's response in both memory systems
@@ -444,11 +1143,8 @@ export default function ShrinkChat() {
               }`}
             >
               {msg.text}
-              {msg.sender === "engine" && (
-                <FeedbackForm
-                  sessionId={threadId}
-                  responseId={`response-${idx}`}
-                />
+              {msg.sender === "engine" && msg.id && (
+                <FeedbackForm sessionId={threadId} responseId={msg.id} />
               )}
             </div>
           ))}
@@ -494,6 +1190,9 @@ export default function ShrinkChat() {
             onReset={() => {
               setMessages([]);
               setOnboardingStep("intro1");
+              // Reset both the ref and localStorage flag
+              introStartedRef.current = false;
+              localStorage.removeItem(`intro_shown_${threadId}`);
             }}
           />
         </div>
