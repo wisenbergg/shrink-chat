@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     // Create a profile entry in Supabase using the server client
     const { error } = await supabase.from("profiles").insert({
       thread_id: threadId,
-      onboarding_complete: false,
+      onboarding_completed: false,
       // Only include created_at if your schema has it
       // If your Supabase has RLS enabled with created_at being auto-filled, remove this line
     });
