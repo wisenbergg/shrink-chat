@@ -86,12 +86,13 @@ export type UserProfile = {
   name?: string;
   emotional_tone?: string[];
   concerns?: string[];
-  onboarding_complete?: boolean;
+  onboarding_completed?: boolean;
 };
 
 export interface MemoryEntry {
   id: string;
   thread_id: string;
+  user_id: string;
   author_role: "user" | "engine";
   message_id?: string | null;
   summary: string;
@@ -135,12 +136,21 @@ export async function markOnboardingComplete(threadId: string): Promise<void> {
   try {
     const { error } = await supabase
       .from("profiles")
-      .update({ onboarding_complete: true })
+      .update({ onboarding_completed: true })
       .eq("thread_id", threadId);
-    if (error) throw error;
+    if (error) {
+      console.error(
+        "[sessionMemory] markOnboardingComplete database error:",
+        error
+      );
+      throw error;
+    }
+    console.log(
+      `[sessionMemory] Successfully marked onboarding complete for thread: ${threadId}`
+    );
   } catch (error) {
     console.error("[sessionMemory] markOnboardingComplete error:", error);
-    // Don't throw, just log the error
+    throw error; // Now throw the error instead of silently failing
   }
 }
 
