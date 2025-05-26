@@ -272,7 +272,14 @@ export default function ShrinkChat() {
       const emotionsString =
         getFromShortTermMemory(threadId, "userEmotions") || "";
       const emotions = emotionsString ? emotionsString.split(",") : [];
-      const userName = getFromShortTermMemory(threadId, "userName");
+      const rawUserName = getFromShortTermMemory(threadId, "userName");
+      // Only use userName if it's meaningful (not empty, not "anonymous", and at least 2 characters)
+      const userName =
+        rawUserName &&
+        rawUserName.toLowerCase() !== "anonymous" &&
+        rawUserName.trim().length > 1
+          ? rawUserName
+          : null;
       const conversationLength = Number(
         getFromShortTermMemory(threadId, "conversationLength") || "0"
       );
@@ -501,7 +508,13 @@ export default function ShrinkChat() {
   );
 
   useEffect(() => {
-    // Check localStorage to see if we've already shown the intro for this thread
+    // Skip if no threadId or already started
+    if (!threadId || introStartedRef.current) return;
+
+    console.log(`=== MAIN USER FLOW LOGIC ===`);
+    console.log(`onboardingStep: ${onboardingStep}`);
+
+    // Check localStorage flags
     const introShownKey = `intro_shown_${threadId}`;
     const onboardingCompleteKey = `onboarding_complete`;
     const hasIntroBeenShown = localStorage.getItem(introShownKey) === "true";
@@ -510,29 +523,46 @@ export default function ShrinkChat() {
     const storedIsReturningUser =
       getFromShortTermMemory(threadId, "isReturningUser") === "true";
 
-    // FIXED: A user is only "returning" if they've ACTUALLY seen the intro before
-    // OR if they have message history (indicating previous sessions)
-    // Simply completing onboarding doesn't make them a returning user
-    const isReturningUser =
-      hasIntroBeenShown ||
-      storedIsReturningUser ||
-      messages.length > 0;
-
     console.log(
-      `User status check - hasIntroBeenShown: ${hasIntroBeenShown}, isOnboardingComplete: ${isOnboardingComplete}, storedIsReturningUser: ${storedIsReturningUser}, messagesLength: ${messages.length}`
-    );
-    console.log(
-      `User identified as: ${isReturningUser ? "returning" : "new"} user`
+      `Flags - hasIntroBeenShown: ${hasIntroBeenShown}, isOnboardingComplete: ${isOnboardingComplete}, storedIsReturningUser: ${storedIsReturningUser}, messagesLength: ${messages.length}`
     );
 
-    // For new users who completed onboarding but haven't seen intro yet
+    // RETURNING USER: Has seen intro before
+    if (hasIntroBeenShown) {
+      console.log("🔄 RETURNING USER: Has seen intro before");
+      setOnboardingStep("done");
+      introStartedRef.current = true;
+      storeInShortTermMemory(threadId, "isReturningUser", "true");
+
+      // Show welcome back message for returning users
+      setTimeout(async () => {
+        const welcomeBackMessage = generateWelcomeBackMessage(messages);
+        const messageId = await logMessageWithTurn(
+          "assistant",
+          welcomeBackMessage
+        );
+        setMessages((prev) => [
+          ...prev,
+          { sender: "engine", text: welcomeBackMessage, id: messageId },
+        ]);
+
+        storeConversationMessage(threadId, "assistant", welcomeBackMessage);
+        storeInShortTermMemory(
+          threadId,
+          "lastInteractionDate",
+          new Date().toISOString()
+        );
+      }, 1000);
+      return;
+    }
+
+    // NEW USER: Just completed onboarding, needs intro sequence
     if (
       onboardingStep === "intro1" &&
       isOnboardingComplete &&
-      !isReturningUser &&
-      !introStartedRef.current
+      !hasIntroBeenShown
     ) {
-      // Set both the ref and localStorage flag
+      console.log("🎯 NEW USER: Starting intro sequence!");
       introStartedRef.current = true;
       localStorage.setItem(introShownKey, "true");
 
@@ -544,47 +574,10 @@ export default function ShrinkChat() {
         "With that said, I'm ready when you are. Anything specific on your mind?",
       ];
       showIntroSequence(introMessages);
+      return;
     }
-    // For returning users who have finished onboarding AND have seen intro before
-    else if (
-      (onboardingStep === "done" || isOnboardingComplete) &&
-      isReturningUser &&
-      !introStartedRef.current
-    ) {
-      // Ensure onboarding step is set to done for returning users
-      if (onboardingStep !== "done") {
-        setOnboardingStep("done");
-      }
 
-      // Log that this is a returning user session
-      console.log("Returning user detected, showing welcome back message");
-
-      // Show welcome back message for returning users
-      introStartedRef.current = true;
-      const welcomeBackMessage = generateWelcomeBackMessage(messages);
-
-      // Add welcome back message after a short delay
-      setTimeout(async () => {
-        const messageId = await logMessageWithTurn(
-          "assistant",
-          welcomeBackMessage
-        );
-        setMessages((prev) => [
-          ...prev,
-          { sender: "engine", text: welcomeBackMessage, id: messageId },
-        ]);
-
-        // Also store the assistant's response in short-term memory
-        storeConversationMessage(threadId, "assistant", welcomeBackMessage);
-
-        // Update the last interaction date
-        storeInShortTermMemory(
-          threadId,
-          "lastInteractionDate",
-          new Date().toISOString()
-        );
-      }, 1000);
-    }
+    console.log("No action taken - waiting for onboarding completion or clear user state");
   }, [
     onboardingStep,
     showIntroSequence,
@@ -592,49 +585,7 @@ export default function ShrinkChat() {
     messages,
     generateWelcomeBackMessage,
     logMessageWithTurn,
-  ]); // Added threadId as dependency
-
-  // Add an immediate check for returning users on component mount
-  useEffect(() => {
-    // Skip if no threadId or if we've already determined onboarding state
-    if (!threadId || onboardingStep !== "intro1") return;
-
-    const checkForReturningUser = async () => {
-      console.log("Checking for returning user status on mount...");
-
-      // Check local storage first for quick determination
-      const introShownKey = `intro_shown_${threadId}`;
-      const onboardingCompleteKey = `onboarding_complete`;
-      const hasIntroBeenShown = localStorage.getItem(introShownKey) === "true";
-      const isOnboardingComplete =
-        localStorage.getItem(onboardingCompleteKey) === "true";
-
-      // If we have local indications of a returning user, skip intro immediately
-      if (hasIntroBeenShown || isOnboardingComplete) {
-        console.log("Returning user detected from local storage");
-        setOnboardingStep("done");
-        return;
-      }
-
-      try {
-        // Check if profile exists and has completed onboarding
-        const res = await fetch(`/api/profile/${threadId}`);
-        if (res.ok) {
-          const { profile } = await res.json();
-          if (profile && profile.onboarding_completed) {
-            console.log("Returning user detected from profile API");
-            setOnboardingStep("done");
-            localStorage.setItem(onboardingCompleteKey, "true");
-            storeInShortTermMemory(threadId, "isReturningUser", "true");
-          }
-        }
-      } catch (error) {
-        console.error("Error checking returning user status:", error);
-      }
-    };
-
-    checkForReturningUser();
-  }, [threadId, onboardingStep]);
+  ]);
 
   /* ──────────────  autoscroll  ───────────── */
   useEffect(scrollToBottom, [messages]);
@@ -914,11 +865,11 @@ export default function ShrinkChat() {
             String(isReturningUser)
           );
 
-          // If onboarding is already complete, skip the intro
+          // Store completion status in localStorage for redundancy if onboarding is complete
           if (profile.onboarding_completed) {
-            setOnboardingStep("done");
-            // Store completion status in localStorage for redundancy
             localStorage.setItem("onboarding_complete", "true");
+            // DON'T automatically set onboardingStep to "done" here
+            // Let the main useEffect determine if this is a new user needing intro or returning user
           }
         } else {
           console.log("No profile found, user may be new");
@@ -1039,7 +990,14 @@ export default function ShrinkChat() {
         console.log("Sending request to /api/shrink with memory context");
 
         // Gather additional context from short-term memory
-        const userName = getFromShortTermMemory(threadId, "userName") || null;
+        const rawUserName = getFromShortTermMemory(threadId, "userName");
+        // Only use userName if it's meaningful (not empty, not "anonymous", and at least 2 characters)
+        const userName =
+          rawUserName &&
+          rawUserName.toLowerCase() !== "anonymous" &&
+          rawUserName.trim().length > 1
+            ? rawUserName
+            : null;
         const userEmotions =
           getFromShortTermMemory(threadId, "userEmotions") || null;
         const conversationTopics =

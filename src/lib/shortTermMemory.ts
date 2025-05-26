@@ -105,7 +105,13 @@ export function getFromShortTermMemory(
 export function getUserNameFromShortTermMemory(
   threadId: string
 ): string | null {
-  return getFromShortTermMemory(threadId, "userName");
+  const rawUserName = getFromShortTermMemory(threadId, "userName");
+  // Only return userName if it's meaningful (not empty, not "anonymous", and at least 2 characters)
+  return rawUserName &&
+    rawUserName.toLowerCase() !== "anonymous" &&
+    rawUserName.trim().length > 1
+    ? rawUserName
+    : null;
 }
 
 /**
