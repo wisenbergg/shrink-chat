@@ -221,7 +221,7 @@ export default function ShrinkChat() {
 
   /* ──────────────  intro script  ───────────── */
   const showIntroSequence = useCallback(
-    (introMsgs: string[]) => {
+    (introMsgs: string[], introShownKey?: string) => {
       const addMessagesSequentially = async (index: number) => {
         if (index >= introMsgs.length) {
           setOnboardingStep("done");
@@ -246,7 +246,11 @@ export default function ShrinkChat() {
           setIsTyping(false);
 
           if (index === introMsgs.length - 1) {
-            // Last message - we're done
+            // Last message - we're done, now safe to mark intro as shown
+            if (introShownKey) {
+              localStorage.setItem(introShownKey, "true");
+              console.log("✅ Intro sequence completed - localStorage flag set");
+            }
             setOnboardingStep("done");
           } else {
             // Wait a bit before starting the next message
@@ -564,7 +568,7 @@ export default function ShrinkChat() {
     ) {
       console.log("🎯 NEW USER: Starting intro sequence!");
       introStartedRef.current = true;
-      localStorage.setItem(introShownKey, "true");
+      // NOTE: localStorage flag is now set AFTER intro completes in showIntroSequence
 
       const introMessages = [
         "Before we get started I just want you to know…",
@@ -573,7 +577,7 @@ export default function ShrinkChat() {
         "Sometimes, that's really all you need.",
         "With that said, I'm ready when you are. Anything specific on your mind?",
       ];
-      showIntroSequence(introMessages);
+      showIntroSequence(introMessages, introShownKey);
       return;
     }
 
