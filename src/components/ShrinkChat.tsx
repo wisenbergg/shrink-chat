@@ -249,7 +249,9 @@ export default function ShrinkChat() {
             // Last message - we're done, now safe to mark intro as shown
             if (introShownKey) {
               localStorage.setItem(introShownKey, "true");
-              console.log("✅ Intro sequence completed - localStorage flag set");
+              console.log(
+                "✅ Intro sequence completed - localStorage flag set"
+              );
             }
             setOnboardingStep("done");
           } else {

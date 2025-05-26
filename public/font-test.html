@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhenIWas Font Test</title>
+    <link rel="stylesheet" href="/fonts.css" />
+    <style>
+      body {
+        font-family: "WhenIWas", Arial, Helvetica, sans-serif;
+        padding: 2rem;
+        line-height: 1.6;
+        background: #f8fafc;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .font-test {
+        margin: 2rem 0;
+        padding: 1rem;
+        background: #f1f5f9;
+        border-radius: 8px;
+      }
+
+      .weight-300 {
+        font-weight: 300;
+      }
+      .weight-400 {
+        font-weight: 400;
+      }
+      .weight-500 {
+        font-weight: 500;
+      } /* Mittel */
+      .weight-600 {
+        font-weight: 600;
+      }
+      .weight-700 {
+        font-weight: 700;
+      }
+
+      .status {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-left: 1rem;
+      }
+
+      .loaded {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .fallback {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>WhenIWas Font Weight Test</h1>
+      <p>
+        Testing all available font weights to verify the WhenIWas font family is
+        working correctly.
+      </p>
+
+      <div class="font-test">
+        <h3>Light (300)</h3>
+        <p class="weight-300">
+          The quick brown fox jumps over the lazy dog.
+          <span class="status" id="status-300">Checking...</span>
+        </p>
+      </div>
+
+      <div class="font-test">
+        <h3>Regular (400)</h3>
+        <p class="weight-400">
+          The quick brown fox jumps over the lazy dog.
+          <span class="status" id="status-400">Checking...</span>
+        </p>
+      </div>
+
+      <div class="font-test">
+        <h3>Mittel / Medium (500) ⭐</h3>
+        <p class="weight-500">
+          The quick brown fox jumps over the lazy dog.
+          <span class="status" id="status-500">Checking...</span>
+        </p>
+      </div>
+
+      <div class="font-test">
+        <h3>SemiBold (600)</h3>
+        <p class="weight-600">
+          The quick brown fox jumps over the lazy dog.
+          <span class="status" id="status-600">Checking...</span>
+        </p>
+      </div>
+
+      <div class="font-test">
+        <h3>Bold (700)</h3>
+        <p class="weight-700">
+          The quick brown fox jumps over the lazy dog.
+          <span class="status" id="status-700">Checking...</span>
+        </p>
+      </div>
+
+      <div
+        style="
+          margin-top: 2rem;
+          padding: 1rem;
+          background: #fef3c7;
+          border-radius: 8px;
+        "
+      >
+        <h3>✅ Current Status</h3>
+        <p>The WhenIWas font is now loaded with the following weights:</p>
+        <ol>
+          <li>✅ WhenIWas Light (300) - Available</li>
+          <li>✅ WhenIWas Regular (400) - Available</li>
+          <li>✅ WhenIWas Medium (500) - Available ⭐</li>
+          <li>✅ WhenIWas Bold (700) - Available</li>
+          <li>✅ WhenIWas Variable Font (100-900) - Available</li>
+          <li>
+            Font files loaded:
+            <ul>
+              <li><code>whenIwas-Light.woff</code></li>
+              <li><code>whenIwas-Regular.woff</code></li>
+              <li><code>whenIwas-Medium.woff</code> ⭐</li>
+              <li><code>whenIwas-Bold.woff</code></li>
+              <li><code>whenIwas-VariableFont_wght.woff</code></li>
+            </ul>
+          </li>
+          <li>The CSS is configured to use weight 500 (Medium) as default</li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      // Check if fonts are loading properly
+      function checkFontStatus() {
+        const weights = [300, 400, 500, 600, 700];
+
+        weights.forEach((weight) => {
+          const element = document.querySelector(`.weight-${weight}`);
+          const status = document.getElementById(`status-${weight}`);
+
+          if (element) {
+            const computedStyle = window.getComputedStyle(element);
+            const fontFamily = computedStyle.fontFamily;
+
+            if (fontFamily.includes("WhenIWas")) {
+              status.textContent = "Font Loading...";
+              status.className = "status loaded";
+            } else {
+              status.textContent = "System Fallback";
+              status.className = "status fallback";
+            }
+          }
+        });
+      }
+
+      // Check immediately and after fonts load
+      checkFontStatus();
+      document.fonts.ready.then(checkFontStatus);
+
+      // Also check after a delay
+      setTimeout(checkFontStatus, 1000);
+    </script>
+  </body>
+</html>

@@ -78,7 +78,8 @@
 
   body {
     @apply antialiased bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
-    font-family: "Apfel Grotezk", Arial, Helvetica, sans-serif;
+    font-family: "WhenIWas", Arial, Helvetica, sans-serif;
+    font-weight: 500; /* Use Medium as default */
     height: 100%;
   }
 
@@ -102,6 +103,32 @@
 
   .font-playfair {
     font-family: var(--font-playfair-display), Georgia, serif;
+  }
+
+  /* WhenIWas weight utilities */
+  .font-wheniwas {
+    font-family: "WhenIWas", Arial, Helvetica, sans-serif;
+    font-weight: 500;
+  }
+
+  .font-wheniwas-light {
+    font-family: "WhenIWas", Arial, Helvetica, sans-serif;
+    font-weight: 300;
+  }
+
+  .font-wheniwas-regular {
+    font-family: "WhenIWas", Arial, Helvetica, sans-serif;
+    font-weight: 400;
+  }
+
+  .font-wheniwas-medium {
+    font-family: "WhenIWas", Arial, Helvetica, sans-serif;
+    font-weight: 500;
+  }
+
+  .font-wheniwas-bold {
+    font-family: "WhenIWas", Arial, Helvetica, sans-serif;
+    font-weight: 700;
   }
 
   .animate-fade-in {

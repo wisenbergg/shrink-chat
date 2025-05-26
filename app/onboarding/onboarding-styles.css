@@ -1,9 +1,10 @@
 /* Enhanced Onboarding Styles */
 
-/* Apfel Grotezk font family application */
+/* WhenIWas font family application */
 .onboarding-container {
-  font-family: "Apfel Grotezk", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, sans-serif;
+  font-family: "WhenIWas", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  font-weight: 500; /* Use Medium weight */
 }
 
 /* Blue highlight color for buttons and interactive elements */
