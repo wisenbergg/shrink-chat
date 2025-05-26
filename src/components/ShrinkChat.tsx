@@ -577,7 +577,9 @@ export default function ShrinkChat() {
       return;
     }
 
-    console.log("No action taken - waiting for onboarding completion or clear user state");
+    console.log(
+      "No action taken - waiting for onboarding completion or clear user state"
+    );
   }, [
     onboardingStep,
     showIntroSequence,
