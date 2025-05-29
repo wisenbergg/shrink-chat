@@ -21,6 +21,7 @@ import {
   getFromShortTermMemory,
 } from "@/lib/shortTermMemory";
 import { logChatClient } from "@/lib/chatLogger";
+import { getTimeContext } from "@/lib/timeUtils";
 
 // Set this to a new value whenever you want to reset all users
 const APP_VERSION = "2.1.0";
@@ -1015,6 +1016,9 @@ export default function ShrinkChat() {
         const conversationLength =
           getFromShortTermMemory(threadId, "conversationLength") || "0";
 
+        // Get time context
+        const timeContext = getTimeContext();
+
         // Enhanced context object
         const enhancedContext = {
           userName,
@@ -1023,6 +1027,10 @@ export default function ShrinkChat() {
           userPreferences,
           conversationLength: parseInt(conversationLength, 10),
           isReturningUser: true,
+          userTime: timeContext.userTime,
+          userTimezone: timeContext.userTimezone,
+          timeOfDay: timeContext.timeOfDay,
+          localDateTime: timeContext.localDateTime,
         };
 
         console.log("Enhanced context:", enhancedContext);

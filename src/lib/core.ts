@@ -46,6 +46,18 @@ export interface PromptInput {
   prompt: string;
   history?: Array<{ role: "user" | "assistant"; content: string }>;
   memoryContext?: string; // Add this parameter
+  enhancedContext?: {
+    userName?: string;
+    userEmotions?: string[];
+    conversationTopics?: string[];
+    userPreferences?: Record<string, any>;
+    conversationLength?: number;
+    isReturningUser?: boolean;
+    userTime?: string;
+    userTimezone?: string;
+    timeOfDay?: "morning" | "afternoon" | "evening" | "night";
+    localDateTime?: string;
+  };
 }
 
 export interface PromptResult {
@@ -66,6 +78,7 @@ export async function runShrinkEngine(
     prompt,
     history = [],
     memoryContext = "",
+    enhancedContext,
   } = input;
   const threadId = threadIds[0] || sessionId;
 
@@ -128,6 +141,23 @@ Please consider this context when responding.
       }.\n\n`
     : "";
 
+  // Enhanced context with time information
+  const timeContext = enhancedContext
+    ? `
+Current context:
+- User's local time: ${enhancedContext.userTime || "Unknown"}
+- Timezone: ${enhancedContext.userTimezone || "Unknown"}
+- Time of day: ${enhancedContext.timeOfDay || "Unknown"}
+- Current date/time: ${enhancedContext.localDateTime || "Unknown"}
+
+Please be mindful of the time context when responding. For example:
+- In the morning: reference starting the day, morning routines
+- In the evening: reference winding down, reflection, rest
+- Late at night: be particularly gentle and consider sleep needs
+
+`
+    : "";
+
   const contextBlock = retrievedChunks
     .slice(0, 3)
     .map((c) => `(${c.discipline}) ${c.topic}: ${c.content}`)
@@ -140,6 +170,7 @@ Please consider this context when responding.
   const systemMessages = [
     { role: "system", content: fewShot },
     profileContext && { role: "system", content: profileContext },
+    timeContext && { role: "system", content: timeContext },
     personalMemoryContext && { role: "system", content: personalMemoryContext }, // Add memory context
     ragBlock && { role: "system", content: ragBlock },
   ].filter(Boolean) as { role: string; content: string }[];
